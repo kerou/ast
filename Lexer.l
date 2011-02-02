@@ -9,19 +9,13 @@
 
 #define COUNT character += yyleng;
 #define LINE line++; character = 1;
-#define RETURN(x) tokens.push_back(Token(x,yytext)); lastToken = x; return x;
+#define RETURN(x) lastToken  = x; return x;
     using namespace std;
     string stringBuffer;
     int line = 1; 
     int character = 1;
     int lastToken = -1;
-    struct Token
-    {
-	Token(int t,char* c){token = t;match = c;}
-	int token;
-	string match;
-    };
-    vector<Token> tokens;
+
     int codeInsertionType = -1; // CODE_INSERTION or PCNT_CODE_INSERTION, or -1 for neither
 
 extern "C"
@@ -38,13 +32,18 @@ extern "C"
 %x C_COMMENT_STATE
 %%
 
+						      /*
+							Code insertion parsing 
+						     */					       
 <INITIAL>"%{" BEGIN(CODE_INSERTION_STATE); codeInsertionType = PCNT_CODE_INSERTION; stringBuffer.clear();COUNT
 <CODE_INSERTION_STATE>\{ BEGIN(CODE_INSERTION_STATE); codeInsertionType = CODE_INSERTION; stringBuffer.clear();COUNT
 <CODE_INSERTION_STATE>"%}" BEGIN(INITIAL); COPY_STRING_BUFFER;COUNT RETURN(codeInsertionType);
 <CODE_INSERTION_STATE>\} BEGIN(INITIAL); COPY_STRING_BUFFER;COUNT RETURN(codeInsertionType);
 <CODE_INSERTION_STATE>. stringBuffer.push_back(yytext[0]);COUNT
 <CODE_INSERTION_STATE>\n stringBuffer.push_back('\n');LINE
-						      
+						      /*
+Literal string parsing
+						       */
 <INITIAL>\" BEGIN(STRING_STATE);stringBuffer.clear();COUNT
 <STRING_STATE>\" BEGIN(INITIAL); COPY_STRING_BUFFER;COUNT RETURN (STRING);
 <STRING_STATE>\\["\\"''] stringBuffer.push_back('\a');COUNT
@@ -52,22 +51,22 @@ extern "C"
 <STRING_STATE>\\b stringBuffer.push_back('\a');COUNT
 <STRING_STATE>\\f stringBuffer.push_back('\a');COUNT
 <STRING_STATE>[^\"\n\\]+ stringBuffer.append(yytext);COUNT
-						     /*						      
-\"[^\"\n]*\" COUNT RETURN (STRING);
+						     /*
+C-style comment parsing
 						     */
-
 <INITIAL>\/\* BEGIN(C_COMMENT_STATE);
 <C_COMMENT_STATE>[^*/\n]
 <C_COMMENT_STATE>\*
 <C_COMMENT_STATE>\/
-<C_COMMENT_STATE>\*\/ BEGIN(C_COMMENT_STATE);
+<C_COMMENT_STATE>\*\/ BEGIN(INITIAL);
 <C_COMMENT_STATE>\n LINE
 
-\/\/.*\n LINE
+\/\/.*\n LINE // C++-style comment
 
-\'[^\n\\]\' yylval.character = yytext[1];COUNT RETURN (CHARACTER);
+\'[^\n\\]\' yylval.character = yytext[1];COUNT RETURN (CHARACTER); // Character literal
 
-"%%" cout << line << "%%\n"; COUNT RETURN (PCNT_PCNT);
+  
+"%%" COUNT RETURN (PCNT_PCNT);
 "%token" COUNT RETURN (PCNT_TOKEN);
 "%type" COUNT RETURN (PCNT_TYPE);
 "%union" COUNT RETURN (PCNT_UNION);
