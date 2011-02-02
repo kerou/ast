@@ -1,0 +1,8 @@
+
+/.deps
+*.o
+ast.exe
+Makefile
+*.tab.cpp
+*.tab.hpp
+*.lex.cpp

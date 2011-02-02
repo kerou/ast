@@ -1,0 +1,87 @@
+%{
+
+#include <cstring>
+#include "Parser.tab.hpp"
+#include <string>
+#include <vector>
+#include <iostream>
+#define COPY_STRING_BUFFER yylval.string = new char[stringBuffer.size()]; strcpy(yylval.string,stringBuffer.c_str());
+
+#define COUNT character += yyleng;
+#define LINE line++; character = 1;
+#define RETURN(x) tokens.push_back(Token(x,yytext)); lastToken = x; return x;
+    using namespace std;
+    string stringBuffer;
+    int line = 1; 
+    int character = 1;
+    int lastToken = -1;
+    struct Token
+    {
+	Token(int t,char* c){token = t;match = c;}
+	int token;
+	string match;
+    };
+    vector<Token> tokens;
+    int codeInsertionType = -1; // CODE_INSERTION or PCNT_CODE_INSERTION, or -1 for neither
+
+extern "C"
+{
+    int yywrap()
+    {
+	return 1;
+    }
+}
+
+%}
+%x STRING_STATE
+%x CODE_INSERTION_STATE
+%x C_COMMENT_STATE
+%%
+
+<INITIAL>"%{" BEGIN(CODE_INSERTION_STATE); codeInsertionType = PCNT_CODE_INSERTION; stringBuffer.clear();COUNT
+<CODE_INSERTION_STATE>\{ BEGIN(CODE_INSERTION_STATE); codeInsertionType = CODE_INSERTION; stringBuffer.clear();COUNT
+<CODE_INSERTION_STATE>"%}" BEGIN(INITIAL); COPY_STRING_BUFFER;COUNT RETURN(codeInsertionType);
+<CODE_INSERTION_STATE>\} BEGIN(INITIAL); COPY_STRING_BUFFER;COUNT RETURN(codeInsertionType);
+<CODE_INSERTION_STATE>. stringBuffer.push_back(yytext[0]);COUNT
+<CODE_INSERTION_STATE>\n stringBuffer.push_back('\n');LINE
+						      
+<INITIAL>\" BEGIN(STRING_STATE);stringBuffer.clear();COUNT
+<STRING_STATE>\" BEGIN(INITIAL); COPY_STRING_BUFFER;COUNT RETURN (STRING);
+<STRING_STATE>\\["\\"''] stringBuffer.push_back('\a');COUNT
+<STRING_STATE>\\a stringBuffer.push_back('\a');COUNT
+<STRING_STATE>\\b stringBuffer.push_back('\a');COUNT
+<STRING_STATE>\\f stringBuffer.push_back('\a');COUNT
+<STRING_STATE>[^\"\n\\]+ stringBuffer.append(yytext);COUNT
+						     /*						      
+\"[^\"\n]*\" COUNT RETURN (STRING);
+						     */
+
+<INITIAL>\/\* BEGIN(C_COMMENT_STATE);
+<C_COMMENT_STATE>[^*/\n]
+<C_COMMENT_STATE>\*
+<C_COMMENT_STATE>\/
+<C_COMMENT_STATE>\*\/ BEGIN(C_COMMENT_STATE);
+<C_COMMENT_STATE>\n LINE
+
+\/\/.*\n LINE
+
+\'[^\n\\]\' yylval.character = yytext[1];COUNT RETURN (CHARACTER);
+
+"%%" cout << line << "%%\n"; COUNT RETURN (PCNT_PCNT);
+"%token" COUNT RETURN (PCNT_TOKEN);
+"%type" COUNT RETURN (PCNT_TYPE);
+"%union" COUNT RETURN (PCNT_UNION);
+"%start" COUNT RETURN (PCNT_START);
+
+
+[a-zA-Z_][a-zA-Z0-9_]* yylval.string = new char[yyleng]; strcpy(yylval.string,yytext);COUNT RETURN (ID);
+
+[;:|<>*{}] COUNT RETURN (yytext[0]);
+
+\n LINE
+[\ \t] COUNT
+
+
+
+%%
+

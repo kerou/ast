@@ -1,0 +1,26 @@
+;; Object ast
+;; EDE project file.
+(ede-proj-project "ast"
+  :name "ast"
+  :file "Project.ede"
+  :targets (list 
+   (ede-proj-target-makefile-program "ast"
+    :name "ast"
+    :path ""
+    :source '("main.cpp" "Parser.tab.cpp" "Lexer.lex.cpp")
+    :configuration-variables 'nil
+    :rules (list 
+     (ede-makefile-rule "Custom-new"
+      :target "%.tab.cpp"
+      :dependencies "%.y"
+      :rules '("bison -d $*.y -o $*.tab.cpp")
+      )
+     (ede-makefile-rule "Custom-new"
+      :target "%.lex.cpp"
+      :dependencies "%.l"
+      :rules '("flex -o$*.lex.cpp $*.l")
+      )
+     )
+    )
+   )
+  )
