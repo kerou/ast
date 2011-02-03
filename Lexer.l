@@ -1,6 +1,7 @@
 %{
 
 #include <cstring>
+#include "ParserOutputEgg.h"
 #include "Parser.tab.hpp"
 #include <string>
 #include <vector>
@@ -75,7 +76,7 @@ C-style comment parsing
 
 [a-zA-Z_][a-zA-Z0-9_]* yylval.string = new char[yyleng]; strcpy(yylval.string,yytext);COUNT RETURN (ID);
 
-[;:|<>*{}] COUNT RETURN (yytext[0]);
+[;:|<>*] COUNT RETURN (yytext[0]);
 
 \n LINE
 [\ \t] COUNT

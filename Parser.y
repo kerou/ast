@@ -1,5 +1,5 @@
 %{
-#include "ParserOutput.h"
+#include "ParserOutputEgg.h"
 int yylex();
 void yyerror(char*);
 %}
@@ -7,6 +7,11 @@ void yyerror(char*);
 {
   char* string;
   char character;
+  BisonRules_Rule* bisonRules;
+  BisonRule_Rule* bisonRule;
+  DerivationRules_Rule* derivationRules;
+  Symbols_Rule* symbols;
+  Symbol_Rule* symbol;
 }
 %token <string> ID STRING CODE_INSERTION PCNT_CODE_INSERTION
 %token <character> CHARACTER
@@ -16,7 +21,12 @@ void yyerror(char*);
 	PCNT_UNION "%union"
 	PCNT_START "%start"
 	
-%type <string> BisonDeclaration	BisonDeclarations
+//	%type <string> BisonDeclaration	BisonDeclarations
+%type <bisonRules> BisonRules
+%type <bisonRule> BisonRule
+%type <derivationRules> DerivationRules
+%type <symbols> Symbols
+%type <symbol> Symbol
 %%
 //;
 
@@ -25,7 +35,7 @@ Bison:
     ;
 /// Declaration section
 BisonDeclarations:
-	/* Empty line */
+	/* Empty line */ 
     |	BisonDeclaration
     |	BisonDeclarations BisonDeclaration
     ;
@@ -38,7 +48,7 @@ BisonDeclaration:
     ;
 
 UnionDeclaration:
-	"%union" '{' UnionMembers '}'
+	"%union" CODE_INSERTION //'{' UnionMembers '}'
     ;
 UnionMembers:
 	/* Empty line */
@@ -79,25 +89,29 @@ Token:
     ;
 /// Rules section
 BisonRules:
-	BisonRule
-    |	BisonRules BisonRule
+	BisonRule {$$ = new BisonRules_Rule($1);}
+    |	BisonRules BisonRule {$$ = $1; $$->addRule($2);}
     ;
 BisonRule:
-	ID ':' DerivationRules ';'
+	ID ':' DerivationRules ';' {$$ = new BisonRule_Rule($1,$3);}
     ;
 DerivationRules:
-    	Symbols
-    |	DerivationRules '|' Symbols
+    	Symbols CodeInsertion {$$ = new DerivationRules_Rule($1);}
+    |	DerivationRules '|' Symbols CodeInsertion{$$ = $1; $$->addRule($3);}
+    ;
+CodeInsertion:
+	/* Empty line */
+    |	PCNT_CODE_INSERTION
     ;
 Symbols:
-	/* Empty line */
-    |	Symbol
-    |	Symbols Symbol
+	/* Empty line */ {$$ = new Symbols_Rule;}
+    |	Symbol {$$ = new Symbols_Rule($1);}
+    |	Symbols Symbol {$$ = $1; $$->addSymbol($2);}
     ;
 Symbol:
-	ID
-    |	CHARACTER
-    |	STRING
+	ID {$$ = new Symbol_Rule_ID($1);}
+    |	CHARACTER {$$ = new Symbol_Rule_CHARACTER($1);}
+    |	STRING {$$ = new Symbol_Rule_STRING($1);}
     ;
 %%
 
