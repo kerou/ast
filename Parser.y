@@ -1,4 +1,5 @@
 %{
+#include "ParserOutput.h"
 int yylex();
 void yyerror(char*);
 %}
