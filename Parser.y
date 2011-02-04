@@ -2,6 +2,7 @@
 #include "ParserOutputEgg.h"
 int yylex();
 void yyerror(char*);
+void changeMode();
 %}
 %union
 {
@@ -12,6 +13,9 @@ void yyerror(char*);
   DerivationRules_Rule* derivationRules;
   Symbols_Rule* symbols;
   Symbol_Rule* symbol;
+  UnionMembers_Rule* unionMembers;
+  UnionMember_Rule* unionMember;
+
 }
 %token <string> ID STRING CODE_INSERTION PCNT_CODE_INSERTION
 %token <character> CHARACTER
@@ -27,11 +31,13 @@ void yyerror(char*);
 %type <derivationRules> DerivationRules
 %type <symbols> Symbols
 %type <symbol> Symbol
+%type <unionMembers> UnionMembers
+%type <unionMember> UnionMember
 %%
 //;
 
 Bison:
-	PCNT_CODE_INSERTION BisonDeclarations "%%" BisonRules "%%"
+	PCNT_CODE_INSERTION BisonDeclarations "%%" BisonRules "%%" {g_ParserOutput.addRules($4);}
     ;
 /// Declaration section
 BisonDeclarations:
@@ -41,23 +47,23 @@ BisonDeclarations:
     ;
 
 BisonDeclaration:
-	UnionDeclaration
+	UnionDeclaration {changeMode();}
     |	StartDeclaration
     |	TokenDeclaration
     |	TypeDeclaration
     ;
 
 UnionDeclaration:
-	"%union" CODE_INSERTION //'{' UnionMembers '}'
+	"%union" '{' UnionMembers '}' {g_ParserOutput.addUnion($3);}
     ;
 UnionMembers:
-	/* Empty line */
-    |	UnionMember
-    |	UnionMembers UnionMember
+	/* Empty line */ {$$ = new UnionMembers_Rule();}
+    |	UnionMember {$$ = new UnionMembers_Rule($1);}
+    |	UnionMembers UnionMember {$$ = $1; $$->addMember($2);}
     ;
 UnionMember:
-	ID ID ';'
-    |	ID '*' ID ';'
+	ID ID ';' {$$ = new UnionMember_Rule1($1,$2);}
+    |	ID '*' ID ';' {$$ = new UnionMember_Rule2($1,$3);}
     ;
 StartDeclaration:
 	"%start" ID
@@ -97,11 +103,11 @@ BisonRule:
     ;
 DerivationRules:
     	Symbols CodeInsertion {$$ = new DerivationRules_Rule($1);}
-    |	DerivationRules '|' Symbols CodeInsertion{$$ = $1; $$->addRule($3);}
+    |	DerivationRules '|' Symbols CodeInsertion {$$ = $1; $$->addRule($3);}
     ;
 CodeInsertion:
 	/* Empty line */
-    |	PCNT_CODE_INSERTION
+    |	CODE_INSERTION
     ;
 Symbols:
 	/* Empty line */ {$$ = new Symbols_Rule;}

@@ -6,13 +6,13 @@ using namespace std;
 extern FILE* yyin;
 int main(int argv, char* argc[])
 {
-  yyin = fopen("Parser.ast","r");
+  yyin = fopen("Parser.y","r");
   yyparse();
   cout << "Success" << endl;
   fclose(yyin);
   return 0;
 }
-extern int line, character, lastToken;
+extern int line, character, lastToken, mode;
 extern char* yytext;
 void yyerror(char* s)
 {
@@ -20,5 +20,6 @@ void yyerror(char* s)
        << "line: " << line << endl
        << "character: " << character << endl
        << "matched string: " << yytext << (int)yytext[0] << endl
-       << "last token: " << lastToken << endl;
+       << "last token: " << lastToken << endl
+       << "mode: " << mode << endl;
 }

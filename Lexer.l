@@ -16,6 +16,7 @@
     int line = 1; 
     int character = 1;
     int lastToken = -1;
+    int mode = INITIAL;
 
     int codeInsertionType = -1; // CODE_INSERTION or PCNT_CODE_INSERTION, or -1 for neither
 
@@ -31,22 +32,23 @@ extern "C"
 %x STRING_STATE
 %x CODE_INSERTION_STATE
 %x C_COMMENT_STATE
+%s POST_UNION_STATE
 %%
 
 						      /*
 							Code insertion parsing 
 						     */					       
 <INITIAL>"%{" BEGIN(CODE_INSERTION_STATE); codeInsertionType = PCNT_CODE_INSERTION; stringBuffer.clear();COUNT
-<CODE_INSERTION_STATE>\{ BEGIN(CODE_INSERTION_STATE); codeInsertionType = CODE_INSERTION; stringBuffer.clear();COUNT
-<CODE_INSERTION_STATE>"%}" BEGIN(INITIAL); COPY_STRING_BUFFER;COUNT RETURN(codeInsertionType);
-<CODE_INSERTION_STATE>\} BEGIN(INITIAL); COPY_STRING_BUFFER;COUNT RETURN(codeInsertionType);
+<POST_UNION_STATE>\{ BEGIN(CODE_INSERTION_STATE); codeInsertionType = CODE_INSERTION; stringBuffer.clear();COUNT
+<CODE_INSERTION_STATE>"%}" BEGIN(mode); COPY_STRING_BUFFER;COUNT RETURN(codeInsertionType);
+<CODE_INSERTION_STATE>\} BEGIN(mode); COPY_STRING_BUFFER;COUNT RETURN(codeInsertionType);
 <CODE_INSERTION_STATE>. stringBuffer.push_back(yytext[0]);COUNT
 <CODE_INSERTION_STATE>\n stringBuffer.push_back('\n');LINE
 						      /*
 Literal string parsing
 						       */
-<INITIAL>\" BEGIN(STRING_STATE);stringBuffer.clear();COUNT
-<STRING_STATE>\" BEGIN(INITIAL); COPY_STRING_BUFFER;COUNT RETURN (STRING);
+<INITIAL,POST_UNION_STATE>\" BEGIN(STRING_STATE);stringBuffer.clear();COUNT
+<STRING_STATE>\" BEGIN(mode); COPY_STRING_BUFFER;COUNT RETURN (STRING);
 <STRING_STATE>\\["\\"''] stringBuffer.push_back('\a');COUNT
 <STRING_STATE>\\a stringBuffer.push_back('\a');COUNT
 <STRING_STATE>\\b stringBuffer.push_back('\a');COUNT
@@ -55,11 +57,11 @@ Literal string parsing
 						     /*
 C-style comment parsing
 						     */
-<INITIAL>\/\* BEGIN(C_COMMENT_STATE);
+<INITIAL,POST_UNION_STATE>\/\* BEGIN(C_COMMENT_STATE);
 <C_COMMENT_STATE>[^*/\n]
 <C_COMMENT_STATE>\*
 <C_COMMENT_STATE>\/
-<C_COMMENT_STATE>\*\/ BEGIN(INITIAL);
+<C_COMMENT_STATE>\*\/ BEGIN(mode);
 <C_COMMENT_STATE>\n LINE
 
 \/\/.*\n LINE // C++-style comment
@@ -75,7 +77,7 @@ C-style comment parsing
 
 
 [a-zA-Z_][a-zA-Z0-9_]* yylval.string = new char[yyleng]; strcpy(yylval.string,yytext);COUNT RETURN (ID);
-
+<INITIAL>[{}] COUNT RETURN (yytext[0]);
 [;:|<>*] COUNT RETURN (yytext[0]);
 
 \n LINE
@@ -85,3 +87,8 @@ C-style comment parsing
 
 %%
 
+void changeMode()
+{
+    BEGIN(POST_UNION_STATE);
+    mode = POST_UNION_STATE;
+}

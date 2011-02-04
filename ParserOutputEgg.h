@@ -1,13 +1,20 @@
 #pragma once
+class BisonRules_Rule;
+class UnionMembers_Rule;
 extern class ParserOutput
 {
 public:
     ParserOutput();
+    void addRules(BisonRules_Rule* _rules);
+    void addUnion(UnionMembers_Rule* _unionDef);
 private:
+    BisonRules_Rule* rules;
+    UnionMembers_Rule* unionDef;
 }g_ParserOutput;
 #include <vector>
 using namespace std;
 
+/// **** RULES SECTION ****
 class Symbol_Rule
 {
 };
@@ -67,4 +74,34 @@ public:
     Symbol_Rule_STRING(char* _string);
 private:
     char* string;
+};
+
+/// **** UNION SECTION ***
+class UnionMember_Rule
+{
+public:
+    UnionMember_Rule();
+};
+class UnionMembers_Rule
+{
+public:
+    UnionMembers_Rule();
+    UnionMembers_Rule(UnionMember_Rule* member);
+    void addMember(UnionMember_Rule* member);
+private:
+    vector<UnionMember_Rule*> members;
+};
+class UnionMember_Rule1: public UnionMember_Rule
+{
+public:
+    UnionMember_Rule1(char* _typename, char* _name);
+private:
+    char* typeName,* name;
+};
+class UnionMember_Rule2: public UnionMember_Rule
+{
+public:
+    UnionMember_Rule2(char* _typename, char* _name);
+private:
+    char* typeName,* name;
 };
