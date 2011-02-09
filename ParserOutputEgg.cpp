@@ -37,16 +37,6 @@ void BisonRules_Rule::addRule(BisonRule_Rule* rule)
   rules.push_back(rule);
 }
 
-Symbol_Rule_ID::Symbol_Rule_ID(char* _name)
-{
-  name = _name;
-}
-
-Symbol_Rule_CHARACTER::Symbol_Rule_CHARACTER(char _character)
-{
-  character = _character;
-}
-
 Symbol_Rule_STRING::Symbol_Rule_STRING(char* _string)
 {
   string = _string;
@@ -93,4 +83,8 @@ void ParserOutput::addRules(BisonRules_Rule* _rules)
 void ParserOutput::addUnion(UnionMembers_Rule* _unionDef)
 {
     unionDef = _unionDef;
+}
+void ParserOutput::addDeclarations(BisonDeclarations_Rule* _declarations)
+{
+    declarations = _declarations;
 }

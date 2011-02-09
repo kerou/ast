@@ -7,8 +7,8 @@
    (ede-proj-target-makefile-program "ast"
     :name "ast"
     :path ""
-    :source '("main.cpp" "Parser.tab.cpp" "Lexer.lex.cpp" "ParserOutputEgg.cpp")
-    :auxsource '("ParserOutputEgg.h" "Parser.tab.hpp")
+    :source '("main.cpp" "Parser.tab.cpp" "Lexer.lex.cpp" "ParserOutputEgg.cpp" "RulesOutput.cpp" "SymbolTable.cpp")
+    :auxsource '("ParserOutputEgg.h" "Parser.tab.hpp" "TypesOutput.h" "SymbolTable.h")
     :configuration-variables 'nil
     :rules (list 
      (ede-makefile-rule "Custom-new"

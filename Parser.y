@@ -16,6 +16,18 @@ void changeMode();
   UnionMembers_Rule* unionMembers;
   UnionMember_Rule* unionMember;
 
+  BisonDeclarations_Rule* bisonDeclarations;
+  BisonDeclaration_Rule* bisonDeclaration;
+
+  UnionDeclaration_Rule* unionDeclaration;
+  StartDeclaration_Rule* startDeclaration;
+  TokenDeclaration_Rule* tokenDeclaration;
+  SemanticValue_Rule* semanticValue;
+  TokenList_Rule* tokenList;
+  Token_Rule* token;
+  TypeDeclaration_Rule* typeDeclaration;
+  
+
 }
 %token <string> ID STRING CODE_INSERTION PCNT_CODE_INSERTION
 %token <character> CHARACTER
@@ -33,24 +45,33 @@ void changeMode();
 %type <symbol> Symbol
 %type <unionMembers> UnionMembers
 %type <unionMember> UnionMember
+%type <bisonDeclarations> BisonDeclarations
+%type <bisonDeclaration> BisonDeclaration
+%type <unionDeclaration> UnionDeclaration
+%type <startDeclaration> StartDeclaration
+%type <tokenDeclaration> TokenDeclaration
+%type <semanticValue> SemanticValue
+%type <tokenList> TokenList
+%type <token> Token
+%type <typeDeclaration> TypeDeclaration
 %%
 //;
 
-Bison:
-	PCNT_CODE_INSERTION BisonDeclarations "%%" BisonRules "%%" {g_ParserOutput.addRules($4);}
+Script:
+PCNT_CODE_INSERTION BisonDeclarations "%%" BisonRules "%%" {g_ParserOutput.addDeclarations($2);g_ParserOutput.addRules($4);g_ParserOutput.outputBison();}
     ;
 /// Declaration section
 BisonDeclarations:
-	/* Empty line */ 
-    |	BisonDeclaration
-    |	BisonDeclarations BisonDeclaration
+	/* Empty line */ {$$ = new BisonDeclarations_Rule(NULL);}
+    |	BisonDeclaration {$$ = new BisonDeclarations_Rule($1);}
+    |	BisonDeclarations BisonDeclaration {$$ = $1; $$->addRule($2);}
     ;
 
 BisonDeclaration:
-	UnionDeclaration {changeMode();}
-    |	StartDeclaration
-    |	TokenDeclaration
-    |	TypeDeclaration
+	UnionDeclaration {$$ = new BisonDeclaration_Rule1($1); changeMode();}
+    |	StartDeclaration {$$ = new BisonDeclaration_Rule2($1);}
+    |	TokenDeclaration {$$ = new BisonDeclaration_Rule3($1);}
+    |	TypeDeclaration {$$ = new BisonDeclaration_Rule4($1);}
     ;
 
 UnionDeclaration:
@@ -66,17 +87,17 @@ UnionMember:
     |	ID '*' ID ';' {$$ = new UnionMember_Rule2($1,$3);}
     ;
 StartDeclaration:
-	"%start" ID
+	"%start" ID {$$ = NULL;}
     ;
 TokenDeclaration:
-	"%token" SemanticValue TokenList
+	"%token" SemanticValue TokenList {$$ = new TokenDeclaration_Rule($2,$3);}
     ;
 TypeDeclaration:
-	"%type" SemanticValue TypeList
+	"%type" SemanticValue TypeList {$$ = NULL;}
     ;
 SemanticValue:
-	/* Empty line */
-    |	'<' ID '>'
+	/* Empty line */ {$$ = new SemanticValue_Rule1();}
+    |	'<' ID '>' {$$ = new SemanticValue_Rule2($2);}
     ;
 TypeList:
 	Type
@@ -86,12 +107,12 @@ Type:
 	ID
     ;
 TokenList:
-	Token
-    |	TokenList Token
+	Token {$$ = new TokenList_Rule($1);}
+    |	TokenList Token {$$ = $1; $$->addToken($2);}
     ;
 Token:
-	ID
-    |	ID STRING
+	ID {$$ = new Token_Rule1($1);}
+|	ID STRING {$$ = new Token_Rule2($1,$2);}
     ;
 /// Rules section
 BisonRules:

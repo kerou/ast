@@ -2,6 +2,7 @@ int yyparse();
 #include <vector>
 #include <iostream>
 #include <cstdio>
+
 using namespace std;
 extern FILE* yyin;
 int main(int argv, char* argc[])
