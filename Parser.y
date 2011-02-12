@@ -26,7 +26,7 @@ void changeMode();
   TokenList_Rule* tokenList;
   Token_Rule* token;
   TypeDeclaration_Rule* typeDeclaration;
-  
+
 
 }
 %token <string> ID STRING CODE_INSERTION PCNT_CODE_INSERTION
@@ -36,7 +36,7 @@ void changeMode();
 	PCNT_TYPE "%type"
 	PCNT_UNION "%union"
 	PCNT_START "%start"
-	
+
 //	%type <string> BisonDeclaration	BisonDeclarations
 %type <bisonRules> BisonRules
 %type <bisonRule> BisonRule
@@ -58,7 +58,7 @@ void changeMode();
 //;
 
 Script:
-PCNT_CODE_INSERTION BisonDeclarations "%%" BisonRules "%%" {g_ParserOutput.addDeclarations($2);g_ParserOutput.addRules($4);g_ParserOutput.outputBison();}
+PCNT_CODE_INSERTION BisonDeclarations PCNT_PCNT BisonRules PCNT_PCNT {g_ParserOutput.addDeclarations($2);g_ParserOutput.addRules($4);g_ParserOutput.output();}
     ;
 /// Declaration section
 BisonDeclarations:
@@ -75,7 +75,7 @@ BisonDeclaration:
     ;
 
 UnionDeclaration:
-	"%union" '{' UnionMembers '}' {g_ParserOutput.addUnion($3);}
+	PCNT_UNION '{' UnionMembers '}' {g_ParserOutput.addUnion($3);}
     ;
 UnionMembers:
 	/* Empty line */ {$$ = new UnionMembers_Rule();}
@@ -87,13 +87,13 @@ UnionMember:
     |	ID '*' ID ';' {$$ = new UnionMember_Rule2($1,$3);}
     ;
 StartDeclaration:
-	"%start" ID {$$ = NULL;}
+	PCNT_START ID {$$ = NULL;}
     ;
 TokenDeclaration:
-	"%token" SemanticValue TokenList {$$ = new TokenDeclaration_Rule($2,$3);}
+	PCNT_TOKEN SemanticValue TokenList {$$ = new TokenDeclaration_Rule($2,$3);$3->setSemanticValue($2);}
     ;
 TypeDeclaration:
-	"%type" SemanticValue TypeList {$$ = NULL;}
+	PCNT_TYPE SemanticValue TypeList {$$ = NULL;}
     ;
 SemanticValue:
 	/* Empty line */ {$$ = new SemanticValue_Rule1();}

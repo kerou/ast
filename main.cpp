@@ -20,7 +20,7 @@ void yyerror(char* s)
   cout << "yyerror: " << s << endl
        << "line: " << line << endl
        << "character: " << character << endl
-       << "matched string: " << yytext << (int)yytext[0] << endl
+       << "matched string: " << yytext << ' ' << (int)yytext[0] << endl
        << "last token: " << lastToken << endl
        << "mode: " << mode << endl;
 }

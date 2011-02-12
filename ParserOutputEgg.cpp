@@ -66,9 +66,10 @@ UnionMember_Rule1::UnionMember_Rule1(char* _typename, char* _name)
 UnionMember_Rule2::UnionMember_Rule2(char* _typename, char* _name)
 {
     name = _name;
-    typeName = new char[strlen(_typename)+1];
+    typeName = new char[strlen(_typename)+2];
     strcpy(typeName,_typename);
     typeName[strlen(_typename)] = '*';
+    typeName[strlen(_typename)+1] = '\0';
 }
 /// SemanticActions
 ParserOutput::ParserOutput()
@@ -88,3 +89,35 @@ void ParserOutput::addDeclarations(BisonDeclarations_Rule* _declarations)
 {
     declarations = _declarations;
 }
+void TokenList_Rule::setSemanticValue(SemanticValue_Rule* value)
+{
+    for (unsigned int i = 0; i < rules.size(); i++)
+    {
+        rules[i]->setSemanticValue(value);
+    }
+}
+void Token_Rule::setSemanticValue(SemanticValue_Rule* value)
+{
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,13 +1,15 @@
+#define ALIASING
 #include "ParserOutputEgg.h"
 #include "SymbolTable.h"
-SymbolTable characterLiterals;
-SymbolTable terminalTokens;
+SymbolTable<void*> characterLiterals;
+SymbolTable<Token_Rule*> terminalTokens;
 #include <cstring>
 #include <fstream>
 using namespace std;
 const char preamble[] = "%{\n\
 \t#include \"TestOutput.h\"\n\
 \tint yylex();\n\
+void yyerror(char*);\
 %}\n";
 void outputCharacterLiteralAliasDeclarations(ofstream* file)
 {
@@ -15,7 +17,7 @@ void outputCharacterLiteralAliasDeclarations(ofstream* file)
     {
         char literal = characterLiterals[i][0];
         int literalInt = literal;
-        (*file) << "%type <character> LitChar" << literalInt << " \""  << literal << "\"\n";
+        (*file) << "%type <Character_Alias> LitChar" << literalInt << " \""  << literal << "\"\n";
     }
 }
 void outputCharacterLiteralAliasRules(ofstream* file)
@@ -24,36 +26,58 @@ void outputCharacterLiteralAliasRules(ofstream* file)
     {
         char literal = characterLiterals[i][0];
         int literalInt = literal;
-        (*file) << "LitChar" << literalInt << ":\n\t '" << literal << "' {$$ = '" << literal << "';}\n;\n";
+        (*file) << "LitChar" << literalInt << ":\n\t '" << literal << "' {$$ = new char('" << literal << "');}\n;\n";
     }
 }
 void outputAliasRules(ofstream* file)
 {
     for (int i = 0; i < terminalTokens.size(); i++)
     {
-        (*file) << terminalTokens[i] << "_Alias:\n\t" << terminalTokens[i] << "\n;\n";
+        char* semantic = terminalTokens[i].userData->getSemanticString();
+        (*file) << terminalTokens[i] << "_Alias:\n\t" << terminalTokens[i];
+        (*file) << " {$$ = new " << terminalTokens[i] << "_Token(";
+        if (semantic != NULL)
+        {
+            (*file) << "$1";
+        }
+        (*file) << ");}\n" << ";\n";
     }
+}
+void ParserOutput::output()
+{
+    outputBison();
+    outputHeader();
+    outputCpp();
 }
 void ParserOutput::outputBison()
 {
     std::ofstream file("TestOutput.y");
+    /// Output %{..%}
     file << preamble;
-
-    file << "%union\n{\n";
+    /// Output union declaration
+    file << "%union\n{\n\t/// Union members for all of the user-defined rules\n";
     rules->outputUnionMembers(&file);
-    file << endl;
+    file << "\t/// Union members for the terminal token aliases\n";
     declarations->outputUnionMembers(&file);
+    unionDef->outputUnionMembers(&file);
+    file << "\tchar* Character_Alias;" << endl;
     file << '}' << endl;
 
+    file << "/// Setting the return types for the user-defined rules\n";
     rules->outputDeclarations(&file);
-    file << endl;
 
+    file << "/// User-defined terminal tokens\n";
     declarations->outputDeclarations(&file);
+    file << "/// Terminal token aliases\n";
     declarations->outputAliasDeclarations(&file);
+    file << "/// Character literal aliases\n";
     outputCharacterLiteralAliasDeclarations(&file);
     file << "%%" << endl;
+    file << "/// User-defined rules\n";
     rules->outputRules(&file);
+    file << "/// Terminal token alias rules\n";
     outputAliasRules(&file);
+    file << "/// Character literal alias rules\n";
     outputCharacterLiteralAliasRules(&file);
     file << "%%" << endl;
 }
@@ -130,10 +154,12 @@ void TokenList_Rule::outputAliasDeclarations(ofstream* file)
         rules[i]->outputAliasDeclaration(file);
     }
 }
+SemanticValue_Rule* lastSemantic;
 Token_Rule::Token_Rule(char* _id)
 {
     id = _id;
-    terminalTokens.add(id);
+    terminalTokens.add(id,this);
+    semanticValue = lastSemantic;
 }
 void Token_Rule1::outputDeclaration(ofstream* file)
 {
@@ -192,9 +218,6 @@ void BisonRule_Rule::outputRule(ofstream* file)
 }
 void DerivationRules_Rule::outputRule(ofstream* file, char* typeName)
 {
-    //(*file) << '\t';
-    //rules[0]->outputRule(file);
-    //(*file) << "{$$ = new " << typeName << "0();}";
     for (unsigned int i = 0; i < rules.size(); i++)
     {
         if (i == 0)
@@ -202,11 +225,13 @@ void DerivationRules_Rule::outputRule(ofstream* file, char* typeName)
         else
             (*file) << endl << "|\t";
         rules[i]->outputRule(file);
-        (*file) << "{$$ = new " << typeName << i << "(";
-        for (unsigned int ii = 0; ii < rules[i]->ruleElements(); ii++)
+        (*file) << "{$$ = new " << typeName;
+        if (rules.size() != 1) (*file) << i+1;
+        (*file) << "(";
+        for (unsigned int ii = 0; ii < rules[i]->size(); ii++)
         {
             (*file) << '$' << ii+1;
-            if (ii < rules[i]->ruleElements()-1)
+            if (ii < rules[i]->size()-1)
                 (*file) << ',';
         }
         (*file) << ");}";
@@ -233,7 +258,12 @@ void Symbol_Rule_ID::outputRule(ofstream* file)
 }
 void Symbol_Rule_CHARACTER::outputRule(ofstream* file)
 {
+#ifndef ALIASING
     (*file) << '"' << character << '"' << ' ';
+#else
+    int literalInt = character;
+    (*file) << "LitChar" << literalInt << ' ';
+#endif
 }
 void Symbol_Rule_STRING::outputRule(ofstream* file)
 {
@@ -267,10 +297,14 @@ TokenDeclaration_Rule::TokenDeclaration_Rule(SemanticValue_Rule* _value, TokenLi
 }
 SemanticValue_Rule1::SemanticValue_Rule1()
 {
+    lastSemantic = this;
 }
 SemanticValue_Rule2::SemanticValue_Rule2(char* _id)
 {
     id = _id;
+    lastSemantic = this;
+    UnionMembers_Rule* members = g_ParserOutput.getUnion();
+    member = members->getMember(id);
 }
 TokenList_Rule::TokenList_Rule(Token_Rule* token)
 {
@@ -298,3 +332,46 @@ Symbol_Rule_ID::Symbol_Rule_ID(char* _name)
 {
     name = _name;
 }
+void UnionMembers_Rule::outputUnionMembers(ofstream* file)
+{
+    for (unsigned int i = 0; i < members.size(); i++)
+    {
+        members[i]->outputUnionMember(file);
+    }
+}
+void UnionMember_Rule1::outputUnionMember(ofstream* file)
+{
+    (*file) << typeName << ' ' << name << ';' << endl;
+}
+void UnionMember_Rule2::outputUnionMember(ofstream* file)
+{
+    (*file) << typeName << ' ' << name << ';' << endl;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

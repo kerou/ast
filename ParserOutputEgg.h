@@ -1,4 +1,6 @@
 #pragma once
+#include <fstream>
+#include <vector>
 class BisonRules_Rule;
 class UnionMembers_Rule;
 class BisonDeclarations_Rule;
@@ -8,22 +10,23 @@ public:
     ParserOutput();
     void addRules(BisonRules_Rule* _rules);
     void addUnion(UnionMembers_Rule* _unionDef);
+    UnionMembers_Rule* getUnion();
     void addDeclarations(BisonDeclarations_Rule* _declarations);
-    void outputBison();
+    void output();
 private:
+    void outputBison();
+    void outputHeader();
+    void outputCpp();
     BisonRules_Rule* rules;
     UnionMembers_Rule* unionDef;
     BisonDeclarations_Rule* declarations;
 }g_ParserOutput;
-#include <vector>
-using namespace std;
-
 /// **** RULES SECTION ****
-#include <fstream>
 class Symbol_Rule
 {
 public:
     virtual void outputRule(std::ofstream* file)=0;
+    virtual void outputType(std::ofstream* file)=0;
 };
 class Symbols_Rule
 {
@@ -32,9 +35,14 @@ public:
     Symbols_Rule(Symbol_Rule* symbol);
     void addSymbol(Symbol_Rule* symbol);
     void outputRule(std::ofstream* file);
-    unsigned int ruleElements(){return symbols.size();}
+    void outputConstructorArguments(std::ofstream* file);
+    void outputMemberDeclarations(std::ofstream* file);
+    void outputConstructorCode(std::ofstream* file);
+    void outputDestructorCode(std::ofstream* file);
+    void outputGetDeclarations(std::ofstream* file);
+    unsigned int size(){return symbols.size();}
 private:
-    vector<Symbol_Rule*> symbols;
+    std::vector<Symbol_Rule*> symbols;
 };
 class DerivationRules_Rule
 {
@@ -42,8 +50,11 @@ public:
     DerivationRules_Rule(Symbols_Rule* symbols);
     void addRule(Symbols_Rule* symbols);
     void outputRule(std::ofstream* file, char* typeName);
+    void outputType(std::ofstream* file, char* typeName);
+    void outputTypeDefinition(std::ofstream* file, char* typeName);
+    unsigned int size(){return rules.size();}
 private:
-    vector<Symbols_Rule*> rules;
+    std::vector<Symbols_Rule*> rules;
 };
 class BisonRule_Rule
 {
@@ -52,6 +63,9 @@ public:
     void outputRule(std::ofstream* file);
     void outputDeclaration(std::ofstream* file);
     void outputUnionMember(std::ofstream* file);
+    void outputTypeDeclaration(std::ofstream* file);
+    void outputTypeDefinition(std::ofstream* file);
+    void outputType(std::ofstream* file);
 private:
     char* name;
     DerivationRules_Rule* rules;
@@ -64,8 +78,11 @@ public:
     void outputUnionMembers(std::ofstream* file);
     void outputDeclarations(std::ofstream* file);
     void outputRules(std::ofstream* file);
+    void outputTypeDeclarations(std::ofstream* file);
+    void outputTypeDefinitions(std::ofstream* file);
+    void outputTypes(std::ofstream* file);
 private:
-    vector<BisonRule_Rule*> rules;
+    std::vector<BisonRule_Rule*> rules;
 };
 
 
@@ -75,6 +92,7 @@ class Symbol_Rule_ID: public Symbol_Rule
 public:
     Symbol_Rule_ID(char* _name);
     void outputRule(std::ofstream* file);
+    void outputType(std::ofstream* file);
 private:
     char* name;
 };
@@ -83,6 +101,7 @@ class Symbol_Rule_CHARACTER: public Symbol_Rule
 public:
     Symbol_Rule_CHARACTER(char _character);
     void outputRule(std::ofstream* file);
+    void outputType(std::ofstream* file);
 private:
     char character;
 };
@@ -91,6 +110,7 @@ class Symbol_Rule_STRING: public Symbol_Rule
 public:
     Symbol_Rule_STRING(char* _string);
     void outputRule(std::ofstream* file);
+    void outputType(std::ofstream* file);
 private:
     char* string;
 };
@@ -100,6 +120,12 @@ class UnionMember_Rule
 {
 public:
     UnionMember_Rule();
+    virtual void outputUnionMember(std::ofstream* file)=0;
+    char* getTypeName(){return typeName;}
+    char* getName(){return name;}
+protected:
+    char* typeName,* name;
+
 };
 class UnionMembers_Rule
 {
@@ -107,22 +133,22 @@ public:
     UnionMembers_Rule();
     UnionMembers_Rule(UnionMember_Rule* member);
     void addMember(UnionMember_Rule* member);
+    UnionMember_Rule* getMember(char* id);
+    void outputUnionMembers(std::ofstream* file);
 private:
-    vector<UnionMember_Rule*> members;
+    std::vector<UnionMember_Rule*> members;
 };
 class UnionMember_Rule1: public UnionMember_Rule
 {
 public:
     UnionMember_Rule1(char* _typename, char* _name);
-private:
-    char* typeName,* name;
+    void outputUnionMember(std::ofstream* file);
 };
 class UnionMember_Rule2: public UnionMember_Rule
 {
 public:
     UnionMember_Rule2(char* _typename, char* _name);
-private:
-    char* typeName,* name;
+    void outputUnionMember(std::ofstream* file);
 };
 /// **** DECLARATIONS SECTION ****
 class BisonDeclaration_Rule;
@@ -184,19 +210,23 @@ class SemanticValue_Rule
 {
 public:
     virtual void outputDeclaration(std::ofstream* file){}
+    virtual char* getString()=0;
 };
 class SemanticValue_Rule1: public SemanticValue_Rule
 {
 public:
     SemanticValue_Rule1();
+    char* getString(){return NULL;}
 };
 class SemanticValue_Rule2: public SemanticValue_Rule
 {
 public:
     SemanticValue_Rule2(char* _id);
     void outputDeclaration(std::ofstream* file){(*file)<<'<'<<id<<"> ";}
+    char* getString(){return id;}
 private:
     char* id;
+    UnionMember_Rule* member;
 };
 class TokenList_Rule;
 class TokenDeclaration_Rule
@@ -214,17 +244,23 @@ class Token_Rule
 {
 public:
     Token_Rule(char* _id);
+    void setSemanticValue(SemanticValue_Rule* value);
     virtual void outputDeclaration(std::ofstream* file)=0;
     virtual void outputUnionMember(std::ofstream* file)=0;
     virtual void outputAliasDeclaration(std::ofstream* file)=0;
+    void outputSemanticAction(std::ofstream* file);
+    char* getSemanticString(){return semanticValue->getString();}
+    virtual void outputConstructorArguments(std::ofstream* file)=0;
 protected:
     char* id;
+    SemanticValue_Rule* semanticValue;
 };
 class TokenList_Rule
 {
 public:
     TokenList_Rule(Token_Rule* token);
     void addToken(Token_Rule* token);
+    void setSemanticValue(SemanticValue_Rule* value);
     void outputDeclaration(std::ofstream* file);
     void outputUnionMembers(std::ofstream* file);
     void outputAliasDeclarations(std::ofstream* file);
@@ -238,6 +274,7 @@ public:
     void outputDeclaration(std::ofstream* file);
     void outputUnionMember(std::ofstream* file);
     void outputAliasDeclaration(std::ofstream* file);
+    void outputConstructorArguments(std::ofstream* file);
 private:
 };
 class Token_Rule2: public Token_Rule
@@ -247,6 +284,7 @@ public:
     void outputDeclaration(std::ofstream* file);
     void outputUnionMember(std::ofstream* file);
     void outputAliasDeclaration(std::ofstream* file);
+    void outputConstructorArguments(std::ofstream* file);
 private:
     char* string;
 };

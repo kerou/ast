@@ -1,7 +1,7 @@
 
 /.deps
 *.o
-ast.exe
+*.exe
 Makefile
 *.tab.cpp
 *.tab.hpp
