@@ -21,11 +21,11 @@ void outputListTypes(ofstream* file)
         (*file) << '{' << endl;
         (*file) << "public:" << endl;
         (*file) << '\t' << listRules[i] << "_List();" << endl;
-        (*file) << "\tvoid add(" << listRules[i] << "_Token*);" << endl;
+        (*file) << "\tvoid add(" << listRules[i] << "_Type*);" << endl;
         (*file) << "\tunsigned int size(){return list.size();}" << endl;
-        (*file) << '\t' << listRules[i] << "_Token* operator[](unsigned int index){return list[index];}" << endl;
+        (*file) << '\t' << listRules[i] << "_Type* operator[](unsigned int index){return list[index];}" << endl;
         (*file) << "private:" << endl;
-        (*file) << "\tstd::vector<" << listRules[i] << "_Token*> list;" << endl;
+        (*file) << "\tstd::vector<" << listRules[i] << "_Type*> list;" << endl;
         (*file) << "};" << endl;
     }
 }
@@ -42,7 +42,7 @@ void ParserOutput::outputHeader()
     file << "/// Terminal token aliases" << endl;
     for (int i = 0; i < terminalTokens.size(); i++)
     {
-        file << "class " << terminalTokens[i].string << "_Token;" << endl;
+        file << "class " << terminalTokens[i].string << "_Type;" << endl;
     }
     file << "/// Character literal aliases" << endl;
     for (int i = 0; i < characterLiterals.size(); i++)
@@ -59,10 +59,10 @@ void ParserOutput::outputHeader()
     outputListTypes(&file);
     for (int i = 0; i < terminalTokens.size(); i++)
     {
-        file << "class " << terminalTokens[i].string << "_Token" << endl;
+        file << "class " << terminalTokens[i].string << "_Type" << endl;
         file << '{' << endl;
         file << "public:" << endl;
-        file << '\t' << terminalTokens[i].string << "_Token(";
+        file << '\t' << terminalTokens[i].string << "_Type(";
         terminalTokens[i].userData->outputConstructorArguments(&file);
         file << ");" << endl;
         file << "};" << endl;
@@ -77,12 +77,12 @@ void BisonRules_Rule::outputTypeDeclarations(ofstream* file)
 }
 void BisonRule_Rule::outputTypeDeclaration(ofstream* file)
 {
-    (*file) << "class " << name << "_Rule;" << endl;
+    (*file) << "class " << name << "_Type;" << endl;
     if (rules->size() != 1)
     {
         for (unsigned int i = 0; i < rules->size(); i++)
         {
-            (*file) << "class " << name << "_Rule" << i+1 << ';' << endl;
+            (*file) << "class " << name << "_Type" << i+1 << ';' << endl;
         }
     }
 }
@@ -96,7 +96,7 @@ void BisonRules_Rule::outputTypes(ofstream* file)
 void BisonRule_Rule::outputType(ofstream* file)
 {
     stringstream derivationName;
-    derivationName << name << "_Rule";
+    derivationName << name << "_Type";
     rules->outputType(file,(char*)derivationName.str().c_str());
 }
 void DerivationRules_Rule::outputType(ofstream* file, char* typeName)
@@ -164,9 +164,9 @@ void Symbols_Rule::outputGetDeclarations(ofstream* file)
 void Symbol_Rule_ID::outputType(ofstream* file)
 {
     if (terminalTokens.lookup(name) == -1)
-        (*file) << name << "_Rule ";
+        (*file) << name << "_Type ";
     else
-        (*file) << name << "_Token ";
+        (*file) << name << "_Type ";
 }
 void Symbol_Rule_CHARACTER::outputType(ofstream* file)
 {/*

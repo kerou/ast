@@ -120,6 +120,7 @@ public:
     Symbol_Rule_List(char* _name);
     void outputRule(std::ofstream* file);
     void outputType(std::ofstream* file);
+    void outputListRule(std::ofstream* file);
 private:
     char* name;
 };

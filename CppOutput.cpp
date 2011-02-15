@@ -12,7 +12,7 @@ void outputListCode(ofstream* file)
         (*file) << listRules[i] << "_List::" << listRules[i] << "_List()" << endl;
         (*file) << '{' << endl;
         (*file) << '}' << endl;
-        (*file) << "void " << listRules[i] << "_List::add(" << listRules[i] << "_Token* token)" << endl;
+        (*file) << "void " << listRules[i] << "_List::add(" << listRules[i] << "_Type* token)" << endl;
         (*file) << '{' << endl;
         (*file) << "\tlist.push_back(token);" << endl;
         (*file) << '}' << endl;
@@ -26,7 +26,7 @@ void ParserOutput::outputCpp()
     outputListCode(&file);
     for (int i = 0; i < terminalTokens.size(); i++)
     {
-        file << terminalTokens[i].string << "_Token::" << terminalTokens[i].string << "_Token(";
+        file << terminalTokens[i].string << "_Type::" << terminalTokens[i].string << "_Type(";
         terminalTokens[i].userData->outputConstructorArguments(&file);
         file << ')' << endl;
         file << '{' << endl;
@@ -43,7 +43,7 @@ void BisonRules_Rule::outputTypeDefinitions(ofstream* file)
 void BisonRule_Rule::outputTypeDefinition(ofstream* file)
 {
     stringstream derivationName;
-    derivationName << name << "_Rule";
+    derivationName << name << "_Type";
     rules->outputTypeDefinition(file,(char*)derivationName.str().c_str());
 }
 void DerivationRules_Rule::outputTypeDefinition(ofstream* file, char* typeName)

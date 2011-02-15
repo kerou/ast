@@ -30,10 +30,7 @@ void outputListRules(ofstream* file)
 {
     for (int i = 0; i < listRules.size(); i++)
     {
-        (*file) << listRules[i] << "_List:" << endl;
-        (*file) << '\t' << listRules[i] << "_Alias" << " {$$ = new " << listRules[i] << "_List(); $$->add($1);}" << endl;
-        (*file) << "|\t" << listRules[i] << "_List " << listRules[i] << "_Alias" << " {$$ = $1; $$->add($2);}" << endl;
-        (*file) << ';' << endl;
+        listRules[i].userData->outputListRule(file);
     }
 }
 void outputCharacterLiteralAliasDeclarations(ofstream* file)
@@ -60,7 +57,7 @@ void outputAliasRules(ofstream* file)
     {
         char* semantic = terminalTokens[i].userData->getSemanticString();
         (*file) << terminalTokens[i] << "_Alias:\n\t" << terminalTokens[i];
-        (*file) << " {$$ = new " << terminalTokens[i] << "_Token(";
+        (*file) << " {$$ = new " << terminalTokens[i] << "_Type(";
         if (semantic != NULL)
         {
             (*file) << "$1";
@@ -200,11 +197,11 @@ void Token_Rule1::outputDeclaration(ofstream* file)
 }
 void Token_Rule1::outputUnionMember(ofstream* file)
 {
-    (*file) << '\t' << id << "_Token* " << id << "_Token_Return;\n";
+    (*file) << '\t' << id << "_Type* " << id << "_Type_Return;\n";
 }
 void Token_Rule1::outputAliasDeclaration(ofstream* file)
 {
-    (*file) << "%type <" << id << "_Token_Return> " << id << "_Alias\n";
+    (*file) << "%type <" << id << "_Type_Return> " << id << "_Alias\n";
 }
 void Token_Rule2::outputDeclaration(ofstream* file)
 {
@@ -212,11 +209,11 @@ void Token_Rule2::outputDeclaration(ofstream* file)
 }
 void Token_Rule2::outputUnionMember(ofstream* file)
 {
-    (*file) << '\t' << id << "_Token* " << id << "_Token_Return;\n";
+    (*file) << '\t' << id << "_Type* " << id << "_Type_Return;\n";
 }
 void Token_Rule2::outputAliasDeclaration(ofstream* file)
 {
-    (*file) << "%type <" << id  << "_Token_Return> " << id << "_Alias \"" << string << "\"\n";
+    (*file) << "%type <" << id  << "_Type_Return> " << id << "_Alias \"" << string << "\"\n";
 }
 void BisonRules_Rule::outputUnionMembers(ofstream* file)
 {
@@ -243,9 +240,9 @@ void BisonRules_Rule::outputRules(ofstream* file)
 void BisonRule_Rule::outputRule(ofstream* file)
 {
     unsigned int length = strlen(name);
-    char typeName[length + strlen("_Rule")];
+    char typeName[length + strlen("_Type")];
     strcpy(typeName,name);
-    strcpy(typeName+length,"_Rule");
+    strcpy(typeName+length,"_Type");
     (*file) << name << ':' << endl;
     rules->outputRule(file,typeName);
 }
@@ -306,7 +303,23 @@ void Symbol_Rule_List::outputRule(ofstream* file)
 {
     (*file) << name << "_List ";
 }
-
+void Symbol_Rule_List::outputListRule(ofstream* file)
+{
+    if (terminalTokens.lookup(name) == -1)
+    {
+        (*file) << name << "_List:" << endl;
+        (*file) << '\t' << name  << " {$$ = new " << name << "_List(); $$->add($1);}" << endl;
+        (*file) << "|\t" << name << "_List " << name  << " {$$ = $1; $$->add($2);}" << endl;
+        (*file) << ';' << endl;
+    }
+    else
+    {
+        (*file) << name << "_List:" << endl;
+        (*file) << '\t' << name << "_Alias" << " {$$ = new " << name << "_List(); $$->add($1);}" << endl;
+        (*file) << "|\t" << name << "_List " << name << "_Alias" << " {$$ = $1; $$->add($2);}" << endl;
+        (*file) << ';' << endl;
+    }
+}
 BisonDeclarations_Rule::BisonDeclarations_Rule(BisonDeclaration_Rule* declaration)
 {
     if (declaration != NULL)
@@ -325,7 +338,7 @@ void BisonRule_Rule::outputDeclaration(ofstream* file)
 }
 void BisonRule_Rule::outputUnionMember(ofstream* file)
 {
-    (*file) << '\t' << name << "_Rule* " << name << "_Return;" << endl;
+    (*file) << '\t' << name << "_Type* " << name << "_Return;" << endl;
 }
 TokenDeclaration_Rule::TokenDeclaration_Rule(SemanticValue_Rule* _value, TokenList_Rule* _list)
 {
