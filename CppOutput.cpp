@@ -4,11 +4,26 @@
 using namespace std;
 extern SymbolTable<void*> characterLiterals;
 extern SymbolTable<Token_Rule*> terminalTokens;
+extern SymbolTable<Symbol_Rule_List*> listRules;
+void outputListCode(ofstream* file)
+{
+    for (int i = 0; i < listRules.size(); i++)
+    {
+        (*file) << listRules[i] << "_List::" << listRules[i] << "_List()" << endl;
+        (*file) << '{' << endl;
+        (*file) << '}' << endl;
+        (*file) << "void " << listRules[i] << "_List::add(" << listRules[i] << "_Token* token)" << endl;
+        (*file) << '{' << endl;
+        (*file) << "\tlist.push_back(token);" << endl;
+        (*file) << '}' << endl;
+    }
+}
 void ParserOutput::outputCpp()
 {
     ofstream file("TestOutput.cpp");
     file << "#include \"TestOutput.h\"" << endl;
     rules->outputTypeDefinitions(&file);
+    outputListCode(&file);
     for (int i = 0; i < terminalTokens.size(); i++)
     {
         file << terminalTokens[i].string << "_Token::" << terminalTokens[i].string << "_Token(";

@@ -29,7 +29,7 @@ void changeMode();
 
 
 }
-%token <string> ID STRING CODE_INSERTION PCNT_CODE_INSERTION
+%token <string> ID STRING CODE_INSERTION PCNT_CODE_INSERTION SQUARE_BRACKETS
 %token <character> CHARACTER
 %token PCNT_PCNT "%%"
 	PCNT_TOKEN "%token"
@@ -139,6 +139,7 @@ Symbol:
 	ID {$$ = new Symbol_Rule_ID($1);}
     |	CHARACTER {$$ = new Symbol_Rule_CHARACTER($1);}
     |	STRING {$$ = new Symbol_Rule_STRING($1);}
+    |   ID SQUARE_BRACKETS {$$ = new Symbol_Rule_List($1);}
     ;
 %%
 

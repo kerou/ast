@@ -5,6 +5,30 @@
 using namespace std;
 extern SymbolTable<void*> characterLiterals;
 extern SymbolTable<Token_Rule*> terminalTokens;
+extern SymbolTable<Symbol_Rule_List*> listRules;
+void outputListTypeDeclarations(ofstream* file)
+{
+    for (int i = 0; i < listRules.size(); i++)
+    {
+        (*file) << "class " << listRules[i] << "_List;" << endl;
+    }
+}
+void outputListTypes(ofstream* file)
+{
+    for (int i = 0; i < listRules.size(); i++)
+    {
+        (*file) << "class " << listRules[i] << "_List" << endl;
+        (*file) << '{' << endl;
+        (*file) << "public:" << endl;
+        (*file) << '\t' << listRules[i] << "_List();" << endl;
+        (*file) << "\tvoid add(" << listRules[i] << "_Token*);" << endl;
+        (*file) << "\tunsigned int size(){return list.size();}" << endl;
+        (*file) << '\t' << listRules[i] << "_Token* operator[](unsigned int index){return list[index];}" << endl;
+        (*file) << "private:" << endl;
+        (*file) << "\tstd::vector<" << listRules[i] << "_Token*> list;" << endl;
+        (*file) << "};" << endl;
+    }
+}
 void ParserOutput::outputHeader()
 {
     ofstream file("TestOutput.h");
@@ -13,6 +37,8 @@ void ParserOutput::outputHeader()
     /// Forward declarations
     file << "/// Forward declarations of all types" << endl;
     rules->outputTypeDeclarations(&file);
+    file << "/// List rule types" << endl;
+    outputListTypeDeclarations(&file);
     file << "/// Terminal token aliases" << endl;
     for (int i = 0; i < terminalTokens.size(); i++)
     {
@@ -25,7 +51,12 @@ void ParserOutput::outputHeader()
         file << "class LitChar" << literalInt << ';' << endl;
     }
     /// Type definitions
+    file << "/// Actual declarations" << endl;
+    file << "/// User defined rules" << endl;
     rules->outputTypes(&file);
+    file << "/// List rules types" << endl;
+    file << "#include <vector>" << endl;
+    outputListTypes(&file);
     for (int i = 0; i < terminalTokens.size(); i++)
     {
         file << "class " << terminalTokens[i].string << "_Token" << endl;
@@ -150,6 +181,10 @@ void Symbol_Rule_CHARACTER::outputType(ofstream* file)
 void Symbol_Rule_STRING::outputType(ofstream* file)
 {
     (*file) << '"' << string << '"' << ' ';
+}
+void Symbol_Rule_List::outputType(ofstream* file)
+{
+    (*file) << name << "_List ";
 }
 void Token_Rule1::outputConstructorArguments(ofstream* file)
 {

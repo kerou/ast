@@ -13,7 +13,7 @@
 #define RETURN(x) lastToken  = x; return x;
     using namespace std;
     string stringBuffer;
-    int line = 1; 
+    int line = 1;
     int character = 1;
     int lastToken = -1;
     int mode = INITIAL;
@@ -36,8 +36,8 @@ extern "C"
 %%
 
 						      /*
-							Code insertion parsing 
-						     */					       
+							Code insertion parsing
+						     */
 <INITIAL>"%{" BEGIN(CODE_INSERTION_STATE); codeInsertionType = PCNT_CODE_INSERTION; stringBuffer.clear();COUNT
 <POST_UNION_STATE>\{ BEGIN(CODE_INSERTION_STATE); codeInsertionType = CODE_INSERTION; stringBuffer.clear();COUNT
 <CODE_INSERTION_STATE>"%}" BEGIN(mode); COPY_STRING_BUFFER;COUNT RETURN(codeInsertionType);
@@ -68,7 +68,7 @@ C-style comment parsing
 
 \'[^\n\\]\' yylval.character = yytext[1];COUNT RETURN (CHARACTER); // Character literal
 
-  
+
 "%%" COUNT RETURN (PCNT_PCNT);
 "%token" COUNT RETURN (PCNT_TOKEN);
 "%type" COUNT RETURN (PCNT_TYPE);
@@ -78,6 +78,7 @@ C-style comment parsing
 
 [a-zA-Z_][a-zA-Z0-9_]* yylval.string = new char[yyleng]; strcpy(yylval.string,yytext);COUNT RETURN (ID);
 <INITIAL>[{}] COUNT RETURN (yytext[0]);
+\[] COUNT RETURN (SQUARE_BRACKETS);
 [;:|<>*] COUNT RETURN (yytext[0]);
 
 \n LINE

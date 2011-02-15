@@ -114,6 +114,15 @@ public:
 private:
     char* string;
 };
+class Symbol_Rule_List: public Symbol_Rule
+{
+public:
+    Symbol_Rule_List(char* _name);
+    void outputRule(std::ofstream* file);
+    void outputType(std::ofstream* file);
+private:
+    char* name;
+};
 
 /// **** UNION SECTION ***
 class UnionMember_Rule

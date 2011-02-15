@@ -3,6 +3,7 @@
 #include "SymbolTable.h"
 SymbolTable<void*> characterLiterals;
 SymbolTable<Token_Rule*> terminalTokens;
+SymbolTable<Symbol_Rule_List*> listRules;
 #include <cstring>
 #include <fstream>
 using namespace std;
@@ -11,6 +12,30 @@ const char preamble[] = "%{\n\
 \tint yylex();\n\
 void yyerror(char*);\
 %}\n";
+void outputListUnionMembers(ofstream* file)
+{
+    for (int i = 0; i < listRules.size(); i++)
+    {
+        (*file) << '\t' << listRules[i] << "_List* " << listRules[i] << "_List_Return;" << endl;
+    }
+}
+void outputListDeclarations(ofstream* file)
+{
+    for (int i = 0; i < listRules.size(); i++)
+    {
+        (*file) << "%type <" << listRules[i] << "_List_Return> " << listRules[i] << "_List" << endl;
+    }
+}
+void outputListRules(ofstream* file)
+{
+    for (int i = 0; i < listRules.size(); i++)
+    {
+        (*file) << listRules[i] << "_List:" << endl;
+        (*file) << '\t' << listRules[i] << "_Alias" << " {$$ = new " << listRules[i] << "_List(); $$->add($1);}" << endl;
+        (*file) << "|\t" << listRules[i] << "_List " << listRules[i] << "_Alias" << " {$$ = $1; $$->add($2);}" << endl;
+        (*file) << ';' << endl;
+    }
+}
 void outputCharacterLiteralAliasDeclarations(ofstream* file)
 {
     for (int i = 0; i < characterLiterals.size(); i++)
@@ -57,14 +82,20 @@ void ParserOutput::outputBison()
     /// Output union declaration
     file << "%union\n{\n\t/// Union members for all of the user-defined rules\n";
     rules->outputUnionMembers(&file);
+    file << "\t/// Union members for list rules\n";
+    outputListUnionMembers(&file);
     file << "\t/// Union members for the terminal token aliases\n";
     declarations->outputUnionMembers(&file);
+    file << "\t/// User-defined semantic values\n";
     unionDef->outputUnionMembers(&file);
+    file << "\t/// Rule used for all character literal aliases\n";
     file << "\tchar* Character_Alias;" << endl;
     file << '}' << endl;
 
     file << "/// Setting the return types for the user-defined rules\n";
     rules->outputDeclarations(&file);
+    file << "/// List rules\n";
+    outputListDeclarations(&file);
 
     file << "/// User-defined terminal tokens\n";
     declarations->outputDeclarations(&file);
@@ -75,6 +106,8 @@ void ParserOutput::outputBison()
     file << "%%" << endl;
     file << "/// User-defined rules\n";
     rules->outputRules(&file);
+    file << "/// List rules\n";
+    outputListRules(&file);
     file << "/// Terminal token alias rules\n";
     outputAliasRules(&file);
     file << "/// Character literal alias rules\n";
@@ -269,6 +302,10 @@ void Symbol_Rule_STRING::outputRule(ofstream* file)
 {
     (*file) << '"' << string << '"' << ' ';
 }
+void Symbol_Rule_List::outputRule(ofstream* file)
+{
+    (*file) << name << "_List ";
+}
 
 BisonDeclarations_Rule::BisonDeclarations_Rule(BisonDeclaration_Rule* declaration)
 {
@@ -332,6 +369,11 @@ Symbol_Rule_ID::Symbol_Rule_ID(char* _name)
 {
     name = _name;
 }
+Symbol_Rule_List::Symbol_Rule_List(char* _name)
+{
+    name = _name;
+    listRules.add(name,this);
+}
 void UnionMembers_Rule::outputUnionMembers(ofstream* file)
 {
     for (unsigned int i = 0; i < members.size(); i++)
@@ -341,11 +383,11 @@ void UnionMembers_Rule::outputUnionMembers(ofstream* file)
 }
 void UnionMember_Rule1::outputUnionMember(ofstream* file)
 {
-    (*file) << typeName << ' ' << name << ';' << endl;
+    (*file) << '\t' << typeName << ' ' << name << ';' << endl;
 }
 void UnionMember_Rule2::outputUnionMember(ofstream* file)
 {
-    (*file) << typeName << ' ' << name << ';' << endl;
+    (*file) << '\t' << typeName << ' ' << name << ';' << endl;
 }
 
 

@@ -7,7 +7,7 @@ using namespace std;
 extern FILE* yyin;
 int main(int argv, char* argc[])
 {
-  yyin = fopen("Parser.y","r");
+  yyin = fopen("TestInput.y","r");
   yyparse();
   cout << "Success" << endl;
   fclose(yyin);
