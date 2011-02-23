@@ -222,61 +222,34 @@ class UnionDeclaration_Rule
 public:
     UnionDeclaration_Rule(UnionMembers_Rule* members);
 };
-class SemanticValue_Rule
-{
-public:
-    virtual void outputDeclaration(std::ofstream* file){}
-    virtual char* getString()=0;
-};
-class SemanticValue_Rule1: public SemanticValue_Rule
-{
-public:
-    SemanticValue_Rule1();
-    char* getString(){return NULL;}
-};
-class SemanticValue_Rule2: public SemanticValue_Rule
-{
-public:
-    SemanticValue_Rule2(char* _id);
-    void outputDeclaration(std::ofstream* file){(*file)<<'<'<<id<<"> ";}
-    char* getString(){return id;}
-private:
-    char* id;
-    UnionMember_Rule* member;
-};
 class TokenList_Rule;
 class TokenDeclaration_Rule
 {
 public:
-    TokenDeclaration_Rule(SemanticValue_Rule* _value, TokenList_Rule* _list);
+    TokenDeclaration_Rule(TokenList_Rule* _list);
     void outputDeclaration(std::ofstream* file);
     void outputUnionMember(std::ofstream* file);
     void outputAliasDeclaration(std::ofstream* file);
 private:
-    SemanticValue_Rule* value;
     TokenList_Rule* list;
 };
 class Token_Rule
 {
 public:
     Token_Rule(char* _id);
-    void setSemanticValue(SemanticValue_Rule* value);
     virtual void outputDeclaration(std::ofstream* file)=0;
     virtual void outputUnionMember(std::ofstream* file)=0;
     virtual void outputAliasDeclaration(std::ofstream* file)=0;
     void outputSemanticAction(std::ofstream* file);
-    char* getSemanticString(){return semanticValue->getString();}
     virtual void outputConstructorArguments(std::ofstream* file)=0;
 protected:
     char* id;
-    SemanticValue_Rule* semanticValue;
 };
 class TokenList_Rule
 {
 public:
     TokenList_Rule(Token_Rule* token);
     void addToken(Token_Rule* token);
-    void setSemanticValue(SemanticValue_Rule* value);
     void outputDeclaration(std::ofstream* file);
     void outputUnionMembers(std::ofstream* file);
     void outputAliasDeclarations(std::ofstream* file);
@@ -309,7 +282,7 @@ class LexCommand_Rule
 {
     public:
         void add(char* regex);
-        void outputFlexRule(std::ofstream* file, char* id);
+        void outputFlexRule(std::ofstream* file, char* id, char* mode);
         void outputFlexDeclaration(std::ofstream* file, char* id);
         static void clearMap(){rulesPerToken.clear();}
     private:
@@ -320,7 +293,7 @@ class LexRule_Rule
 {
     public:
         LexRule_Rule(char* _id, LexCommand_Rule* _command);
-        void outputFlexRule(std::ofstream* file);
+        void outputFlexRule(std::ofstream* file, char* mode);
         void outputFlexDeclaration(std::ofstream* file);
     private:
         char* id;
@@ -330,7 +303,7 @@ class LexRules_Rule
 {
     public:
         void add(LexRule_Rule* rule);
-        void outputFlexRules(std::ofstream* file);
+        void outputFlexRules(std::ofstream* file, char* mode);
         void outputFlexDeclarations(std::ofstream* file);
     private:
         std::vector<LexRule_Rule*> rules;
@@ -341,6 +314,10 @@ class LexMode_Rule
         LexMode_Rule(char* _id, LexRules_Rule* _rules);
         void outputFlexRules(std::ofstream* file);
         void outputFlexDeclarations(std::ofstream* file);
+        void outputBisonCodeInsertion(std::ofstream* file, unsigned int which);
+        void outputModeChangingAliasDeclaration(std::ofstream* file);
+        void outputModeChangingAliasRule(std::ofstream* file);
+        char* getId(){return id;}
     private:
         char* id;
         LexRules_Rule* rules;
@@ -351,6 +328,7 @@ class LexModes_Rule
         void add(LexMode_Rule* mode);
         void outputFlexRules(std::ofstream* file);
         void outputFlexDeclarations(std::ofstream* file);
+        void outputBisonCodeInsertions(std::ofstream* file);
     private:
         std::vector<LexMode_Rule*> modes;
 };

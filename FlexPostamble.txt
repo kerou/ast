@@ -1,5 +1,6 @@
 #include <stack>
 #include <string>
+#include <cstring>
 int column = 1;
 int line  = 1;
 std::string stringBuffer;

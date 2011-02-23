@@ -4,14 +4,14 @@
 SymbolTable<void*> characterLiterals;
 SymbolTable<Token_Rule*> terminalTokens;
 SymbolTable<Symbol_Rule_List*> listRules;
+SymbolTable<LexMode_Rule*> lexModeTable;
 #include <cstring>
 #include <fstream>
 using namespace std;
 const char preamble[] = "%{\n\
 \t#include \"TestOutput.h\"\n\
 \tint yylex();\n\
-\tvoid yyerror(char*);\n\
-%}\n";
+\tvoid yyerror(char*);\n";
 void outputListUnionMembers(ofstream* file)
 {
     for (int i = 0; i < listRules.size(); i++)
@@ -42,6 +42,30 @@ void outputCharacterLiteralAliasDeclarations(ofstream* file)
         (*file) << "%type <Character_Alias> LitChar" << literalInt << " \""  << literal << "\"\n";
     }
 }
+void outputModeChangingAliasDeclarations(ofstream* file)
+{
+    for (unsigned int i = 0; i < lexModeTable.size(); i++)
+    {
+        lexModeTable[i].userData->outputModeChangingAliasDeclaration(file);
+    }
+}
+void LexMode_Rule::outputModeChangingAliasDeclaration(ofstream* file)
+{
+    (*file) << "%type <" << id << "_Return> " << id << "_Alias" << endl;
+}
+void outputModeChangingAliasRules(ofstream* file)
+{
+    for (unsigned int i = 0; i < lexModeTable.size(); i++)
+    {
+        lexModeTable[i].userData->outputModeChangingAliasRule(file);
+    }
+}
+void LexMode_Rule::outputModeChangingAliasRule(ofstream* file)
+{
+    (*file) << id << "_Alias:" << endl;
+    (*file) << "\t{pushMode(" << id << "_Mode);} " << id << " {popMode(); $$ = $2;}" << endl;
+    (*file) << ';' << endl;
+}
 void outputCharacterLiteralAliasRules(ofstream* file)
 {
     for (int i = 0; i < characterLiterals.size(); i++)
@@ -55,14 +79,8 @@ void outputAliasRules(ofstream* file)
 {
     for (int i = 0; i < terminalTokens.size(); i++)
     {
-        char* semantic = terminalTokens[i].userData->getSemanticString();
         (*file) << terminalTokens[i] << "_Alias:\n\t" << terminalTokens[i];
-        (*file) << " {$$ = new " << terminalTokens[i] << "_Type(";
-        if (semantic != NULL)
-        {
-            (*file) << "$1";
-        }
-        (*file) << ");}\n" << ";\n";
+        (*file) << " {$$ = new " << terminalTokens[i] << "_Type($1);}\n" << ";\n";
     }
 }
 void ParserOutput::outputBison()
@@ -70,6 +88,8 @@ void ParserOutput::outputBison()
     ofstream file("TestOutput.y");
     /// Output %{..%}
     file << preamble;
+    lexModes->outputBisonCodeInsertions(&file);
+    file << "%}" << endl;
     /// Output union declaration
     file << "%union\n{\n\t/// Union members for all of the user-defined rules\n";
     rules->outputUnionMembers(&file);
@@ -77,10 +97,9 @@ void ParserOutput::outputBison()
     outputListUnionMembers(&file);
     file << "\t/// Union members for the terminal token aliases\n";
     declarations->outputUnionMembers(&file);
-    file << "\t/// User-defined semantic values\n";
-    unionDef->outputUnionMembers(&file);
     file << "\t/// Rule used for all character literal aliases\n";
     file << "\tchar* Character_Alias;" << endl;
+    file << "\tchar* string;" << endl;
     file << '}' << endl;
 
     file << "/// Setting the return types for the user-defined rules\n";
@@ -90,20 +109,42 @@ void ParserOutput::outputBison()
 
     file << "/// User-defined terminal tokens\n";
     declarations->outputDeclarations(&file);
+    file << "/// Mode changing alias\n";
+    file << "%type <" << lexModeTable[0] << "_Return> " << "StartRule_Automatic" << endl;
+    outputModeChangingAliasDeclarations(&file);
     file << "/// Terminal token aliases\n";
     declarations->outputAliasDeclarations(&file);
     file << "/// Character literal aliases\n";
     outputCharacterLiteralAliasDeclarations(&file);
     file << "%%" << endl;
+    file << "StartRule_Automatic:" << endl;
+    file << '\t' << lexModeTable[0] << "_Alias {$$ = $1;}" << endl;
+    file << ';' << endl;
     file << "/// User-defined rules\n";
     rules->outputRules(&file);
     file << "/// List rules\n";
     outputListRules(&file);
+    file << "/// Mode changing alias rules" << endl;
+    outputModeChangingAliasRules(&file);
     file << "/// Terminal token alias rules\n";
     outputAliasRules(&file);
     file << "/// Character literal alias rules\n";
     outputCharacterLiteralAliasRules(&file);
     file << "%%" << endl;
+}
+/// Flex rules telling bison about the lex modes
+void LexModes_Rule::outputBisonCodeInsertions(ofstream* file)
+{
+    (*file) << "void pushMode(int mode);" << endl;
+    (*file) << "void popMode();" << endl;
+    for (unsigned int i = 0; i < modes.size(); i++)
+    {
+        modes[i]->outputBisonCodeInsertion(file,i+1);
+    }
+}
+void LexMode_Rule::outputBisonCodeInsertion(ofstream* file, unsigned int which)
+{
+    (*file) << "#define " << id << "_Mode " << which << endl;
 }
 void BisonDeclarations_Rule::outputDeclarations(ofstream* file)
 {
@@ -144,9 +185,7 @@ void BisonDeclaration_Rule3::outputAliasDeclaration(ofstream* file)
 }
 void TokenDeclaration_Rule::outputDeclaration(ofstream* file)
 {
-    (*file) << "%token ";
-    value->outputDeclaration(file);
-    (*file) << '\n';
+    (*file) << "%token <string>" << endl;
     list->outputDeclaration(file);
 }
 void TokenDeclaration_Rule::outputUnionMember(ofstream* file)
@@ -178,12 +217,10 @@ void TokenList_Rule::outputAliasDeclarations(ofstream* file)
         rules[i]->outputAliasDeclaration(file);
     }
 }
-SemanticValue_Rule* lastSemantic;
 Token_Rule::Token_Rule(char* _id)
 {
     id = _id;
     terminalTokens.add(id,this);
-    semanticValue = lastSemantic;
 }
 void Token_Rule1::outputDeclaration(ofstream* file)
 {
@@ -268,14 +305,14 @@ void Symbols_Rule::outputRule(ofstream* file)
         (*file) << "/* Empty rule */";
     }
     else
-        for (unsigned int i = 0; i < symbols.size(); i++)
-        {
-            symbols[i]->outputRule(file);
-        }
+    for (unsigned int i = 0; i < symbols.size(); i++)
+    {
+        symbols[i]->outputRule(file);
+    }
 }
 void Symbol_Rule_ID::outputRule(ofstream* file)
 {
-    if (terminalTokens.lookup(name) == -1)
+    if (terminalTokens.lookup(name) == -1 && lexModeTable.lookup(name) == -1)
         (*file) << name << ' ';
     else
         (*file) << name << "_Alias ";
@@ -301,10 +338,20 @@ void Symbol_Rule_List::outputListRule(ofstream* file)
 {
     if (terminalTokens.lookup(name) == -1)
     {
-        (*file) << name << "_List:" << endl;
-        (*file) << '\t' << name  << " {$$ = new " << name << "_List(); $$->add($1);}" << endl;
-        (*file) << "|\t" << name << "_List " << name  << " {$$ = $1; $$->add($2);}" << endl;
-        (*file) << ';' << endl;
+        if (lexModeTable.lookup(name) == -1)
+        {
+            (*file) << name << "_List:" << endl;
+            (*file) << '\t' << name  << " {$$ = new " << name << "_List(); $$->add($1);}" << endl;
+            (*file) << "|\t" << name << "_List " << name  << " {$$ = $1; $$->add($2);}" << endl;
+            (*file) << ';' << endl;
+        }
+        else
+        {
+            (*file) << name << "_List:" << endl;
+            (*file) << '\t' << "{pushMode(" << name << "_Mode);} " << name << " {popMode(); $$ = new " << name << "_List(); $$->add($2);}" << endl;
+            (*file) << "|\t" << name << "_List " << "{pushMode(" << name << "_Mode);} " << name  << " {popMode(); $$ = $1; $$->add($3);}" << endl;
+            (*file) << ';' << endl;
+        }
     }
     else
     {
@@ -334,21 +381,9 @@ void BisonRule_Rule::outputUnionMember(ofstream* file)
 {
     (*file) << '\t' << name << "_Type* " << name << "_Return;" << endl;
 }
-TokenDeclaration_Rule::TokenDeclaration_Rule(SemanticValue_Rule* _value, TokenList_Rule* _list)
+TokenDeclaration_Rule::TokenDeclaration_Rule(TokenList_Rule* _list)
 {
-    value = _value;
     list = _list;
-}
-SemanticValue_Rule1::SemanticValue_Rule1()
-{
-    lastSemantic = this;
-}
-SemanticValue_Rule2::SemanticValue_Rule2(char* _id)
-{
-    id = _id;
-    lastSemantic = this;
-    UnionMembers_Rule* members = g_ParserOutput.getUnion();
-    member = members->getMember(id);
 }
 TokenList_Rule::TokenList_Rule(Token_Rule* token)
 {
@@ -370,7 +405,7 @@ Token_Rule2::Token_Rule2(char* _id, char* _string)
 Symbol_Rule_CHARACTER::Symbol_Rule_CHARACTER(char _character)
 {
     character = _character;
-    characterLiterals.add(&character);
+    characterLiterals.add(&character,NULL);
 }
 Symbol_Rule_ID::Symbol_Rule_ID(char* _name)
 {

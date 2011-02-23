@@ -65,6 +65,8 @@ void ParserOutput::outputHeader()
         file << '\t' << terminalTokens[i].string << "_Type(";
         terminalTokens[i].userData->outputConstructorArguments(&file);
         file << ");" << endl;
+        file << "private:" << endl;
+        file << "\tchar* matchedText;" << endl;
         file << "};" << endl;
     }
 }
@@ -188,14 +190,11 @@ void Symbol_Rule_List::outputType(ofstream* file)
 }
 void Token_Rule1::outputConstructorArguments(ofstream* file)
 {
-    UnionMember_Rule* member = g_ParserOutput.getUnion()->getMember(semanticValue->getString());
-    (*file) << member->getTypeName();
+    (*file) << "char* _matchedText";
 }
 void Token_Rule2::outputConstructorArguments(ofstream* file)
 {
-    UnionMember_Rule* member = g_ParserOutput.getUnion()->getMember(semanticValue->getString());
-    if (member != NULL)
-        (*file) << member->getTypeName();
+    (*file) << "char* _matchedText";
 }
 UnionMembers_Rule* ParserOutput::getUnion()
 {

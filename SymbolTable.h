@@ -18,7 +18,7 @@ class SymbolTable
 public:
     SymbolTable();
     int lookup(char* string);
-    bool add(char* string, T _userSymbolTableData = NULL);
+    bool add(char* string, T _userSymbolTableData);
     int size();
     SymbolTableData<T>& operator[](int i);
     T& getUserSymbolTableData(int i);

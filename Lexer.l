@@ -36,7 +36,6 @@ extern "C"
 %x C_COMMENT_STATE
 %x REGEX_MODE
 %x REGEX_MODE_CHARACTER
-%s POST_UNION_STATE
 %s LEX_MODES_STATE
 %%
 
@@ -44,7 +43,7 @@ extern "C"
 							Code insertion parsing
 						     */
 <INITIAL>"%{" BEGIN(CODE_INSERTION_STATE); codeInsertionType = PCNT_CODE_INSERTION; stringBuffer.clear();COUNT
-<POST_UNION_STATE>\{ BEGIN(CODE_INSERTION_STATE); codeInsertionType = CODE_INSERTION; stringBuffer.clear();COUNT
+<INITIAL>\{ BEGIN(CODE_INSERTION_STATE); codeInsertionType = CODE_INSERTION; stringBuffer.clear();COUNT
 <CODE_INSERTION_STATE>"%}" BEGIN(mode); COPY_STRING_BUFFER;COUNT RETURN(codeInsertionType);
 <CODE_INSERTION_STATE>\} BEGIN(mode); COPY_STRING_BUFFER;COUNT RETURN(codeInsertionType);
 <CODE_INSERTION_STATE>. stringBuffer.push_back(yytext[0]);COUNT
@@ -52,7 +51,7 @@ extern "C"
 						      /*
 Literal string parsing
 						       */
-<INITIAL,POST_UNION_STATE>\" BEGIN(STRING_STATE);stringBuffer.clear();COUNT
+<INITIAL>\" BEGIN(STRING_STATE);stringBuffer.clear();COUNT
 <STRING_STATE>\" BEGIN(mode); COPY_STRING_BUFFER;COUNT RETURN (STRING);
 <STRING_STATE>\\["\\"''] stringBuffer.push_back('\a');COUNT
 <STRING_STATE>\\a stringBuffer.push_back('\a');COUNT
@@ -62,7 +61,7 @@ Literal string parsing
 						     /*
 C-style comment parsing
 						     */
-<INITIAL,POST_UNION_STATE>\/\* BEGIN(C_COMMENT_STATE);
+<INITIAL>\/\* BEGIN(C_COMMENT_STATE);
 <C_COMMENT_STATE>[^*/\n]
 <C_COMMENT_STATE>\*
 <C_COMMENT_STATE>\/
@@ -70,8 +69,8 @@ C-style comment parsing
 <C_COMMENT_STATE>\n LINE
 
 <REGEX_MODE>;\n BEGIN(LEX_MODES_STATE); COUNT LINE RETURN(';');
-<REGEX_MODE>.+ yylval.string = new char[yyleng]; strcpy(yylval.string,yytext);COUNT LINE RETURN(REGULAR_EXPRESSION);
-<REGEX_MODE>\n 
+<REGEX_MODE>.+ yylval.string = new char[yyleng]; strcpy(yylval.string,yytext);COUNT LINE RETURN(REGULAR_EXPRESSION);printf(yytext);
+<REGEX_MODE>\n
 
 
 \/\/.*\n LINE // C++-style comment
@@ -89,7 +88,7 @@ C-style comment parsing
 [a-zA-Z_][a-zA-Z0-9_]* yylval.string = new char[yyleng]; strcpy(yylval.string,yytext);COUNT RETURN (ID);
 <INITIAL,LEX_MODES_STATE>[{}] COUNT RETURN (yytext[0]);
 \[] COUNT RETURN (SQUARE_BRACKETS);
-[;:|<>*] COUNT RETURN (yytext[0]);
+[;:|<>*{}] COUNT RETURN (yytext[0]);
 
 \n LINE
 [\ \t] COUNT
@@ -98,11 +97,6 @@ C-style comment parsing
 
 %%
 
-void changeMode()
-{
-    BEGIN(POST_UNION_STATE);
-    mode = POST_UNION_STATE;
-}
 void lexRulesMode()
 {
     BEGIN(LEX_MODES_STATE);

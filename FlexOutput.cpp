@@ -45,6 +45,7 @@ void LexModes_Rule::outputFlexDeclarations(ofstream* file)
 
 void LexMode_Rule::outputFlexDeclarations(ofstream* file)
 {
+    (*file) << "%x " << id << "_Mode" << endl;
     rules->outputFlexDeclarations(file);
 }
 void LexRules_Rule::outputFlexDeclarations(ofstream* file)
@@ -65,7 +66,7 @@ void LexCommand_Rule::outputFlexDeclaration(ofstream* file, char* id)
     {
         string s(id);
         unsigned int number = rulesPerToken[s]++;
-        (*file) << "%x " << id << number << endl;
+        (*file) << "%x " << id << "_Mode" << number << endl;
     }
 }
 
@@ -80,36 +81,36 @@ void LexModes_Rule::outputFlexRules(ofstream* file)
 
 void LexMode_Rule::outputFlexRules(ofstream* file)
 {
-    rules->outputFlexRules(file);
+    rules->outputFlexRules(file,id);
 }
-void LexRules_Rule::outputFlexRules(ofstream* file)
+void LexRules_Rule::outputFlexRules(ofstream* file, char* mode)
 {
     for (unsigned int i = 0; i < rules.size(); i++)
     {
-        rules[i]->outputFlexRule(file);
+        rules[i]->outputFlexRule(file,mode);
     }
 }
-void LexRule_Rule::outputFlexRule(ofstream* file)
+void LexRule_Rule::outputFlexRule(ofstream* file, char* mode)
 {
-    command->outputFlexRule(file,id);
+    command->outputFlexRule(file,id,mode);
 }
-void LexCommand_Rule::outputFlexRule(ofstream* file, char* id)
+void LexCommand_Rule::outputFlexRule(ofstream* file, char* id, char* mode)
 {
     unsigned int size = regexes.size();
     if (size == 1)
     {
-        (*file) << regexes[0] << " copyString(); return " << id << ';' << endl << endl;
+        (*file) << '<' << mode << "_Mode" << '>' << regexes[0] << " copyString(); return " << id << ';' << endl << endl;
     }
     else
     {
         string s(id);
         unsigned int number = rulesPerToken[s]++;
-        (*file) << regexes[0] << " pushMode(" << id << number << "); appendToStringBuffer();" << endl;
+        (*file) << '<' << mode << "_Mode" << '>' << regexes[0] << " pushMode(" << id << "_Mode" << number << "); appendToStringBuffer();" << endl;
         for (unsigned int i = 1; i < size-1; i++)
         {
-            (*file) << '<' << id << number << '>' <<  regexes[i] << " appendToStringBuffer();" << endl;
+            (*file) << '<' << id << "_Mode" << number << '>' << regexes[i] << " appendToStringBuffer();" << endl;
         }
-        (*file) << '<' << id << number  << '>' << regexes[size-1] << " popMode(); returnStringBuffer(); return " << id << number  << ';' << endl << endl;
+        (*file) << '<' << id << "_Mode" << number  << '>' << regexes[size-1] << " popMode(); returnStringBuffer(); return " << id << ';' << endl << endl;
     }
 }
 

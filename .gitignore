@@ -6,6 +6,7 @@ Makefile
 *.tab.cpp
 *.tab.hpp
 *.lex.cpp
+*.yy.cpp
 *.cbp
 *.depend
 *.layout

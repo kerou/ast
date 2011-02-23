@@ -24,4 +24,5 @@
      )
     )
    )
+  :configuration-variables 'nil
   )

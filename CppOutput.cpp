@@ -30,6 +30,7 @@ void ParserOutput::outputCpp()
         terminalTokens[i].userData->outputConstructorArguments(&file);
         file << ')' << endl;
         file << '{' << endl;
+        file << "\tmatchedText = _matchedText;" << endl;
         file << '}' << endl;
     }
 }
