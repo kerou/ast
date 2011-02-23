@@ -1,0 +1,40 @@
+#include <stack>
+#include <string>
+int column = 1;
+int line  = 1;
+std::string stringBuffer;
+std::stack<int> modeStack({INITIAL});
+void count(int yyleng)
+{
+    column += yyleng;
+}
+void endLine()
+{
+    line++;
+    column = 1;
+}
+void appendToStringBuffer()
+{
+    stringBuffer.append(yytext);
+}
+void returnStringBuffer()
+{
+    yylval.string = new char[stringBuffer.size()];
+    strcpy(yylval.string,stringBuffer.c_str());
+    stringBuffer.clear();
+}
+void pushMode(int mode)
+{
+    modeStack.push(mode);
+    BEGIN(mode);
+}
+void popMode()
+{
+    modeStack.pop();
+    BEGIN(modeStack.top());
+}
+void copyString()
+{
+    yylval.string = new char[yyleng];
+    strcpy(yylval.string,yytext);
+}

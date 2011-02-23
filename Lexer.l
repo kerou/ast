@@ -1,6 +1,8 @@
 %{
 
 #include <cstring>
+#include <cstdio>
+#define fileno(__F) ((__F)->_file)
 #include "ParserOutputEgg.h"
 #include "Parser.tab.hpp"
 #include <string>
@@ -32,7 +34,10 @@ extern "C"
 %x STRING_STATE
 %x CODE_INSERTION_STATE
 %x C_COMMENT_STATE
+%x REGEX_MODE
+%x REGEX_MODE_CHARACTER
 %s POST_UNION_STATE
+%s LEX_MODES_STATE
 %%
 
 						      /*
@@ -64,6 +69,11 @@ C-style comment parsing
 <C_COMMENT_STATE>\*\/ BEGIN(mode);
 <C_COMMENT_STATE>\n LINE
 
+<REGEX_MODE>;\n BEGIN(LEX_MODES_STATE); COUNT LINE RETURN(';');
+<REGEX_MODE>.+ yylval.string = new char[yyleng]; strcpy(yylval.string,yytext);COUNT LINE RETURN(REGULAR_EXPRESSION);
+<REGEX_MODE>\n 
+
+
 \/\/.*\n LINE // C++-style comment
 
 \'[^\n\\]\' yylval.character = yytext[1];COUNT RETURN (CHARACTER); // Character literal
@@ -77,7 +87,7 @@ C-style comment parsing
 
 
 [a-zA-Z_][a-zA-Z0-9_]* yylval.string = new char[yyleng]; strcpy(yylval.string,yytext);COUNT RETURN (ID);
-<INITIAL>[{}] COUNT RETURN (yytext[0]);
+<INITIAL,LEX_MODES_STATE>[{}] COUNT RETURN (yytext[0]);
 \[] COUNT RETURN (SQUARE_BRACKETS);
 [;:|<>*] COUNT RETURN (yytext[0]);
 
@@ -92,4 +102,13 @@ void changeMode()
 {
     BEGIN(POST_UNION_STATE);
     mode = POST_UNION_STATE;
+}
+void lexRulesMode()
+{
+    BEGIN(LEX_MODES_STATE);
+    mode = LEX_MODES_STATE;
+}
+void regexMode()
+{
+    BEGIN(REGEX_MODE);
 }

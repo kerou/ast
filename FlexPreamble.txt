@@ -1,0 +1,28 @@
+%{
+
+extern "C"
+{
+    int yywrap()
+    {
+        return 1;
+    }
+}
+/// Text counting functions
+void count(int yyleng);
+void endline();
+/// String concatenating functions
+void appendToStringBuffer();
+void returnStringBuffer();
+/// Mode stack functions
+void pushMode(int mode);
+void popMode();
+
+void copyString();
+
+#include "TestOutput.h"
+#include "TestOutput.tab.hpp"
+/// Fix for c++0x
+#define fileno(__F) ((__F)->_file)
+
+
+%}

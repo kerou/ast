@@ -1,9 +1,12 @@
 #pragma once
 #include <fstream>
 #include <vector>
+#include <unordered_map>
+#include <string>
 class BisonRules_Rule;
 class UnionMembers_Rule;
 class BisonDeclarations_Rule;
+class LexModes_Rule;
 extern class ParserOutput
 {
 public:
@@ -12,14 +15,17 @@ public:
     void addUnion(UnionMembers_Rule* _unionDef);
     UnionMembers_Rule* getUnion();
     void addDeclarations(BisonDeclarations_Rule* _declarations);
+    void addLexModes(LexModes_Rule* _lexModes);
     void output();
 private:
     void outputBison();
     void outputHeader();
     void outputCpp();
+    void outputFlex();
     BisonRules_Rule* rules;
     UnionMembers_Rule* unionDef;
     BisonDeclarations_Rule* declarations;
+    LexModes_Rule* lexModes;
 }g_ParserOutput;
 /// **** RULES SECTION ****
 class Symbol_Rule
@@ -298,3 +304,101 @@ public:
 private:
     char* string;
 };
+/// Lex modes section
+class LexCommand_Rule
+{
+    public:
+        void add(char* regex);
+        void outputFlexRule(std::ofstream* file, char* id);
+        void outputFlexDeclaration(std::ofstream* file, char* id);
+        static void clearMap(){rulesPerToken.clear();}
+    private:
+        static std::unordered_map<std::string,unsigned int> rulesPerToken;
+        std::vector<char*> regexes;
+};
+class LexRule_Rule
+{
+    public:
+        LexRule_Rule(char* _id, LexCommand_Rule* _command);
+        void outputFlexRule(std::ofstream* file);
+        void outputFlexDeclaration(std::ofstream* file);
+    private:
+        char* id;
+        LexCommand_Rule* command;
+};
+class LexRules_Rule
+{
+    public:
+        void add(LexRule_Rule* rule);
+        void outputFlexRules(std::ofstream* file);
+        void outputFlexDeclarations(std::ofstream* file);
+    private:
+        std::vector<LexRule_Rule*> rules;
+};
+class LexMode_Rule
+{
+    public:
+        LexMode_Rule(char* _id, LexRules_Rule* _rules);
+        void outputFlexRules(std::ofstream* file);
+        void outputFlexDeclarations(std::ofstream* file);
+    private:
+        char* id;
+        LexRules_Rule* rules;
+};
+class LexModes_Rule
+{
+    public:
+        void add(LexMode_Rule* mode);
+        void outputFlexRules(std::ofstream* file);
+        void outputFlexDeclarations(std::ofstream* file);
+    private:
+        std::vector<LexMode_Rule*> modes;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

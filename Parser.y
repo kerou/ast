@@ -3,6 +3,8 @@
 int yylex();
 void yyerror(char*);
 void changeMode();
+void lexRulesMode();
+void regexMode();
 %}
 %union
 {
@@ -27,9 +29,13 @@ void changeMode();
   Token_Rule* token;
   TypeDeclaration_Rule* typeDeclaration;
 
-
+  LexModes_Rule* lexModes;
+  LexMode_Rule* lexMode;
+  LexRules_Rule* lexRules;
+  LexRule_Rule* lexRule;
+  LexCommand_Rule* lexCommand;
 }
-%token <string> ID STRING CODE_INSERTION PCNT_CODE_INSERTION SQUARE_BRACKETS
+%token <string> ID STRING CODE_INSERTION PCNT_CODE_INSERTION SQUARE_BRACKETS REGULAR_EXPRESSION
 %token <character> CHARACTER
 %token PCNT_PCNT "%%"
 	PCNT_TOKEN "%token"
@@ -54,11 +60,16 @@ void changeMode();
 %type <tokenList> TokenList
 %type <token> Token
 %type <typeDeclaration> TypeDeclaration
+%type <lexModes> LexModes
+%type <lexMode> LexMode
+%type <lexRules> LexRules
+%type <lexRule> LexRule
+%type <lexCommand> LexCommand
 %%
 //;
 
 Script:
-PCNT_CODE_INSERTION BisonDeclarations PCNT_PCNT BisonRules PCNT_PCNT {g_ParserOutput.addDeclarations($2);g_ParserOutput.addRules($4);g_ParserOutput.output();}
+PCNT_CODE_INSERTION BisonDeclarations PCNT_PCNT BisonRules PCNT_PCNT {lexRulesMode();} LexModes PCNT_PCNT {g_ParserOutput.addDeclarations($2);g_ParserOutput.addRules($4);g_ParserOutput.addLexModes($7);g_ParserOutput.output();}
     ;
 /// Declaration section
 BisonDeclarations:
@@ -140,6 +151,26 @@ Symbol:
     |	CHARACTER {$$ = new Symbol_Rule_CHARACTER($1);}
     |	STRING {$$ = new Symbol_Rule_STRING($1);}
     |   ID SQUARE_BRACKETS {$$ = new Symbol_Rule_List($1);}
+    ;
+/// Lex section
+LexModes:
+	LexMode {$$ = new LexModes_Rule(); $$->add($1);}
+    |	LexModes LexMode {$$ = $1; $$->add($2);}
+    |	/* Empty line - delete this at some point */ {$$ = new LexModes_Rule();}
+    ;
+LexMode:
+	ID '{' LexRules '}' {$$ = new LexMode_Rule($1,$3);}
+    ;
+LexRules:
+	LexRule {$$ = new LexRules_Rule(); $$->add($1);}
+    |	LexRules LexRule {$$ = $1; $$->add($2);}
+    ;
+LexRule:
+	ID ':' {regexMode();} LexCommand ';' {$$ = new LexRule_Rule($1,$4);}
+    ;
+LexCommand:
+	REGULAR_EXPRESSION {$$ = new LexCommand_Rule(); $$->add($1);}
+|	LexCommand REGULAR_EXPRESSION {$$ = $1; $$->add($2);}
     ;
 %%
 

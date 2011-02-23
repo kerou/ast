@@ -10,7 +10,7 @@ using namespace std;
 const char preamble[] = "%{\n\
 \t#include \"TestOutput.h\"\n\
 \tint yylex();\n\
-void yyerror(char*);\
+\tvoid yyerror(char*);\n\
 %}\n";
 void outputListUnionMembers(ofstream* file)
 {
@@ -65,15 +65,9 @@ void outputAliasRules(ofstream* file)
         (*file) << ");}\n" << ";\n";
     }
 }
-void ParserOutput::output()
-{
-    outputBison();
-    outputHeader();
-    outputCpp();
-}
 void ParserOutput::outputBison()
 {
-    std::ofstream file("TestOutput.y");
+    ofstream file("TestOutput.y");
     /// Output %{..%}
     file << preamble;
     /// Output union declaration
