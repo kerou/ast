@@ -2,20 +2,22 @@
 #include "SymbolTable.h"
 #include <sstream>
 using namespace std;
-extern SymbolTable<void*> characterLiterals;
-extern SymbolTable<Token_Rule*> terminalTokens;
-extern SymbolTable<Symbol_Rule_List*> listRules;
+extern std::unordered_map<std::string,void*> characterLiterals;
+extern std::unordered_map<std::string,Token_Rule*> terminalTokens;
+extern std::unordered_map<std::string,Symbol_Rule_List*> listRules;
 void outputListCode(ofstream* file)
 {
-    for (int i = 0; i < listRules.size(); i++)
+    auto iter = listRules.begin();
+    while (iter != listRules.end())
     {
-        (*file) << listRules[i] << "_List::" << listRules[i] << "_List()" << endl;
+        (*file) << iter->first << "_List::" << iter->first << "_List()" << endl;
         (*file) << '{' << endl;
         (*file) << '}' << endl;
-        (*file) << "void " << listRules[i] << "_List::add(" << listRules[i] << "_Type* token)" << endl;
+        (*file) << "void " << iter->first << "_List::add(" << iter->first << "_Type* token)" << endl;
         (*file) << '{' << endl;
         (*file) << "\tlist.push_back(token);" << endl;
         (*file) << '}' << endl;
+		iter++;
     }
 }
 void outputFile(ofstream* outfile, const char* infileName);
@@ -25,12 +27,14 @@ void ParserOutput::outputCpp()
     outputFile(&file,"SourcePreamble.txt");
     rules->outputTypeDefinitions(&file);
     outputListCode(&file);
-    for (int i = 0; i < terminalTokens.size(); i++)
+    auto iter = terminalTokens.begin();
+    while (iter != terminalTokens.end())
     {
-        file << terminalTokens[i].string << "_Type::" << terminalTokens[i].string << "_Type(char* _matchedText, char* _preceedingWhitespace)" << endl;
+        file << iter->first << "_Type::" << iter->first << "_Type(char* _matchedText, char* _preceedingWhitespace)" << endl;
         file << ":TerminalTokenBaseClass(_matchedText,_preceedingWhitespace)" << endl;
         file << '{' << endl;
         file << '}' << endl;
+		iter++;
     }
 }
 void BisonRules_Rule::outputTypeDefinitions(ofstream* file)

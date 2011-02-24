@@ -1,7 +1,7 @@
 #include "ParserOutputEgg.h"
 #include "SymbolTable.h"
 #include <cstring>
-extern SymbolTable<LexMode_Rule*> lexModeTable;
+extern std::unordered_map<std::string,LexMode_Rule*> lexModeTable;
 ParserOutput g_ParserOutput;
 Symbols_Rule::Symbols_Rule(void)
 {
@@ -79,7 +79,7 @@ LexMode_Rule::LexMode_Rule(char* _id, LexRules_Rule* _rules)
 {
     id = _id;
     rules = _rules;
-    lexModeTable.add(id,this);
+    lexModeTable[id] = this;
 }
 void LexRules_Rule::add(LexRule_Rule* rule)
 {

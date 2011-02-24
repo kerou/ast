@@ -3,31 +3,35 @@
 #define ALIASING
 #include <sstream>
 using namespace std;
-extern SymbolTable<void*> characterLiterals;
-extern SymbolTable<Token_Rule*> terminalTokens;
-extern SymbolTable<Symbol_Rule_List*> listRules;
-extern SymbolTable<Token_Rule2*> stringAliases;
+extern std::unordered_map<std::string,void*> characterLiterals;
+extern std::unordered_map<std::string,Token_Rule*> terminalTokens;
+extern std::unordered_map<std::string,Symbol_Rule_List*> listRules;
+extern std::unordered_map<std::string,Token_Rule2*> stringAliases;
 void outputListTypeDeclarations(ofstream* file)
 {
-    for (int i = 0; i < listRules.size(); i++)
+    auto iter = listRules.begin();
+    while (iter != listRules.end())
     {
-        (*file) << "class " << listRules[i] << "_List;" << endl;
+        (*file) << "class " << iter->first << "_List;" << endl;
+        iter++;
     }
 }
 void outputListTypes(ofstream* file)
 {
-    for (int i = 0; i < listRules.size(); i++)
+    auto iter = listRules.begin();
+    while (iter != listRules.end())
     {
-        (*file) << "class " << listRules[i] << "_List: public ListRuleBaseClass" << endl;
+        (*file) << "class " << iter->first << "_List: public ListRuleBaseClass" << endl;
         (*file) << '{' << endl;
         (*file) << "public:" << endl;
-        (*file) << '\t' << listRules[i] << "_List();" << endl;
-        (*file) << "\tvoid add(" << listRules[i] << "_Type*);" << endl;
+        (*file) << '\t' << iter->first << "_List();" << endl;
+        (*file) << "\tvoid add(" << iter->first << "_Type*);" << endl;
         (*file) << "\tunsigned int size(){return list.size();}" << endl;
-        (*file) << '\t' << listRules[i] << "_Type* operator[](unsigned int index){return list[index];}" << endl;
+        (*file) << '\t' << iter->first << "_Type* operator[](unsigned int index){return list[index];}" << endl;
         (*file) << "private:" << endl;
-        (*file) << "\tstd::vector<" << listRules[i] << "_Type*> list;" << endl;
+        (*file) << "\tstd::vector<" << iter->first << "_Type*> list;" << endl;
         (*file) << "};" << endl;
+        iter++;
     }
 }
 void outputFile(ofstream* outfile, const char* infileName);
@@ -40,9 +44,11 @@ void ParserOutput::outputHeader()
     file << "/// List rule types" << endl;
     outputListTypeDeclarations(&file);
     file << "/// Terminal token aliases" << endl;
-    for (int i = 0; i < terminalTokens.size(); i++)
+    auto iter = terminalTokens.begin();
+    while (iter != terminalTokens.end())
     {
-        file << "class " << terminalTokens[i].string << "_Type;" << endl;
+        file << "class " << iter->first << "_Type;" << endl;
+        iter++;
     }
     file << "/// Character literal" << endl;
     file << "class CharacterLiteral_Type;" << endl;
@@ -53,13 +59,15 @@ void ParserOutput::outputHeader()
     file << "/// List rules types" << endl;
     outputListTypes(&file);
     file << "/// Terminal tokens types" << endl;
-    for (int i = 0; i < terminalTokens.size(); i++)
+    iter = terminalTokens.begin();
+    while (iter != terminalTokens.end())
     {
-        file << "class " << terminalTokens[i].string << "_Type: public TerminalTokenBaseClass" << endl;
+        file << "class " << iter->first << "_Type: public TerminalTokenBaseClass" << endl;
         file << '{' << endl;
         file << "public:" << endl;
-        file << '\t' << terminalTokens[i].string << "_Type(char* _matchedText, char* _preceedingWhitespace);" << endl;
+        file << '\t' << iter->first << "_Type(char* _matchedText, char* _preceedingWhitespace);" << endl;
         file << "};" << endl;
+        iter++;
     }
 }
 void BisonRules_Rule::outputTypeDeclarations(ofstream* file)
@@ -162,7 +170,7 @@ void Symbols_Rule::outputGetDeclarations(ofstream* file)
 }
 void Symbol_Rule_ID::outputType(ofstream* file)
 {
-    if (terminalTokens.lookup(name) == -1)
+    if (terminalTokens.find(name) == terminalTokens.end())
         (*file) << name << "_Type ";
     else
         (*file) << name << "_Type ";
@@ -179,7 +187,7 @@ void Symbol_Rule_CHARACTER::outputType(ofstream* file)
 }
 void Symbol_Rule_STRING::outputType(ofstream* file)
 {
-    Token_Rule2* token = stringAliases[stringAliases.lookup(string)].userData;
+    Token_Rule2* token = stringAliases.find(string)->second;
     (*file) << token->getId() << "_Type" << ' ';
 }
 void Symbol_Rule_List::outputType(ofstream* file)

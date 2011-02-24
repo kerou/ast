@@ -1,11 +1,11 @@
 #define ALIASING
 #include "ParserOutputEgg.h"
 #include "SymbolTable.h"
-SymbolTable<void*> characterLiterals;
-SymbolTable<Token_Rule*> terminalTokens;
-SymbolTable<Symbol_Rule_List*> listRules;
-SymbolTable<LexMode_Rule*> lexModeTable;
-SymbolTable<Token_Rule2*> stringAliases;
+std::unordered_map<std::string,void*> characterLiterals;
+std::unordered_map<std::string,Token_Rule*> terminalTokens;
+std::unordered_map<std::string,Symbol_Rule_List*> listRules;
+std::unordered_map<std::string,LexMode_Rule*> lexModeTable;
+std::unordered_map<std::string,Token_Rule2*> stringAliases;
 #include <cstring>
 #include <fstream>
 using namespace std;
@@ -15,40 +15,50 @@ const char preamble[] = "%{\n\
 \tvoid yyerror(const char*);\n";
 void outputListUnionMembers(ofstream* file)
 {
-    for (int i = 0; i < listRules.size(); i++)
+    auto iter = listRules.begin();
+    while (iter != listRules.end())
     {
-        (*file) << '\t' << listRules[i] << "_List* " << listRules[i] << "_List_Return;" << endl;
+        (*file) << '\t' << iter->first << "_List* " << iter->first << "_List_Return;" << endl;
+        iter++;
     }
 }
 void outputListDeclarations(ofstream* file)
 {
-    for (int i = 0; i < listRules.size(); i++)
+    auto iter = listRules.begin();
+    while (iter != listRules.end())
     {
-        (*file) << "%type <" << listRules[i] << "_List_Return> " << listRules[i] << "_List" << endl;
-        (*file) << "%type <" << listRules[i] << "_List_Return> " << listRules[i] << "_ListIter" << endl;
+        (*file) << "%type <" << iter->first << "_List_Return> " << iter->first << "_List" << endl;
+        (*file) << "%type <" << iter->first << "_List_Return> " << iter->first << "_ListIter" << endl;
+        iter++;
     }
 }
 void outputListRules(ofstream* file)
 {
-    for (int i = 0; i < listRules.size(); i++)
+    auto iter = listRules.begin();
+    while (iter != listRules.end())
     {
-        listRules[i].userData->outputListRule(file);
+        iter->second->outputListRule(file);
+        iter++;
     }
 }
 void outputCharacterLiteralAliasDeclarations(ofstream* file)
 {
-    for (int i = 0; i < characterLiterals.size(); i++)
+    auto iter = characterLiterals.begin();
+    while (iter != characterLiterals.end())
     {
-        char literal = characterLiterals[i][0];
+        char literal = iter->first[0];
         int literalInt = literal;
         (*file) << "%type <Character_Alias> LitChar" << literalInt << " \""  << literal << "\"\n";
+        iter++;
     }
 }
 void outputModeChangingAliasDeclarations(ofstream* file)
 {
-    for (int i = 0; i < lexModeTable.size(); i++)
+    auto iter = lexModeTable.begin();
+    while (iter != lexModeTable.end())
     {
-        lexModeTable[i].userData->outputModeChangingAliasDeclaration(file);
+        iter->second->outputModeChangingAliasDeclaration(file);
+        iter++;
     }
 }
 void LexMode_Rule::outputModeChangingAliasDeclaration(ofstream* file)
@@ -57,9 +67,11 @@ void LexMode_Rule::outputModeChangingAliasDeclaration(ofstream* file)
 }
 void outputModeChangingAliasRules(ofstream* file)
 {
-    for (int i = 0; i < lexModeTable.size(); i++)
+    auto iter = lexModeTable.begin();
+    while (iter != lexModeTable.end())
     {
-        lexModeTable[i].userData->outputModeChangingAliasRule(file);
+        iter->second->outputModeChangingAliasRule(file);
+        iter++;
     }
 }
 void LexMode_Rule::outputModeChangingAliasRule(ofstream* file)
@@ -71,37 +83,43 @@ void LexMode_Rule::outputModeChangingAliasRule(ofstream* file)
 void outputCharacterLiteralDeclarations(ofstream* file)
 {
     (*file) << "%type <characterWhitespace> ";
-    for (int i = 0; i < characterLiterals.size(); i++)
+    auto iter = characterLiterals.begin();
+    while (iter != characterLiterals.end())
     {
-        (*file) << '\'' << characterLiterals[i][0] << "' ";
+        (*file) << '\'' << iter->first[0] << "' ";
+        iter++;
     }
     (*file) << endl;
 }
 void outputCharacterLiteralAliasRules(ofstream* file)
 {
-    for (int i = 0; i < characterLiterals.size(); i++)
+    auto iter = characterLiterals.begin();
+    while (iter != characterLiterals.end())
     {
-        char literal = characterLiterals[i][0];
+        char literal = iter->first[0];
         int literalInt = literal;
         (*file) << "LitChar" << literalInt << ":\n\t '" << literal << "' {$$ = new CharacterLiteral_Type('" << literal << "',$1);}\n;\n";
+        iter++;
     }
 }
 void outputAliasRules(ofstream* file)
 {
-    for (int i = 0; i < terminalTokens.size(); i++)
+    auto iter = terminalTokens.begin();
+    while (iter != terminalTokens.end())
     {
-        (*file) << terminalTokens[i] << "_Alias:\n\t" << terminalTokens[i];
-        (*file) << " {$$ = new " << terminalTokens[i] << "_Type($1.string,$1.preceedingWhitespace);}" << endl;
-        if (terminalTokens[i].userData->getType() == Token_Rule::token2)
+        (*file) << iter->first << "_Alias:\n\t" << iter->first;
+        (*file) << " {$$ = new " << iter->first << "_Type($1.string,$1.preceedingWhitespace);}" << endl;
+        if (iter->second->getType() == Token_Rule::token2)
         {
-            Token_Rule2* rule2 = (Token_Rule2*)terminalTokens[i].userData;
+            Token_Rule2* rule2 = (Token_Rule2*)iter->second;
             (*file) << "|\terror {$$ = NULL; yyerror(\"Expected " << rule2->getString() << " token\"); yyerrok;}" << endl;
         }
         else
         {
-            (*file) << "|\terror {$$ = NULL; yyerror(\"Expected " << terminalTokens[i] << " token\"); yyerrok;}" << endl;
+            (*file) << "|\terror {$$ = NULL; yyerror(\"Expected " << iter->first << " token\"); yyerrok;}" << endl;
         }
         (*file) << ';' << endl;
+        iter++;
     }
 }
 void ParserOutput::outputBison()
@@ -110,7 +128,7 @@ void ParserOutput::outputBison()
     /// Output %{..%}
     file << preamble;
     lexModes->outputBisonCodeInsertions(&file);
-    file << '\t' << lexModeTable[0] << "_Type* parserReturn;" << endl;
+    file << '\t' << lexModeTable.begin()->first << "_Type* parserReturn;" << endl;
     file << "%}" << endl;
     /// Output union declaration
     file << "%union\n{\n\t/// Union members for all of the user-defined rules\n";
@@ -139,7 +157,7 @@ void ParserOutput::outputBison()
     file << "/// All character literals used" << endl;
     outputCharacterLiteralDeclarations(&file);
     file << "/// Mode changing alias\n";
-    file << "%type <" << lexModeTable[0] << "_Return> " << "StartRule_Automatic" << endl;
+    file << "%type <" << lexModeTable.begin()->first << "_Return> " << "StartRule_Automatic" << endl;
     outputModeChangingAliasDeclarations(&file);
     file << "/// Terminal token aliases\n";
     declarations->outputAliasDeclarations(&file);
@@ -147,7 +165,7 @@ void ParserOutput::outputBison()
     outputCharacterLiteralAliasDeclarations(&file);
     file << "%%" << endl;
     file << "StartRule_Automatic:" << endl;
-    file << '\t' << lexModeTable[0] << "_Alias {$$ = $1; parserReturn = $1;}" << endl;
+    file << '\t' << lexModeTable.begin()->first << "_Alias {$$ = $1; parserReturn = $1;}" << endl;
     file << ';' << endl;
     file << "/// User-defined rules\n";
     rules->outputRules(&file);
@@ -249,7 +267,7 @@ void TokenList_Rule::outputAliasDeclarations(ofstream* file)
 Token_Rule::Token_Rule(char* _id)
 {
     id = _id;
-    terminalTokens.add(id,this);
+    terminalTokens[id] = this;
 }
 void Token_Rule1::outputDeclaration(ofstream* file)
 {
@@ -341,7 +359,7 @@ void Symbols_Rule::outputRule(ofstream* file)
 }
 void Symbol_Rule_ID::outputRule(ofstream* file)
 {
-    if (terminalTokens.lookup(name) == -1 && lexModeTable.lookup(name) == -1)
+    if (terminalTokens.find(name) == terminalTokens.end() && lexModeTable.find(name) == lexModeTable.end())
         (*file) << name << ' ';
     else
         (*file) << name << "_Alias ";
@@ -357,7 +375,7 @@ void Symbol_Rule_CHARACTER::outputRule(ofstream* file)
 }
 void Symbol_Rule_STRING::outputRule(ofstream* file)
 {
-    Token_Rule2* token = stringAliases[stringAliases.lookup(string)].userData;
+    Token_Rule2* token = stringAliases[string];
     (*file) << token->getId() << "_Alias ";
 }
 void Symbol_Rule_List::outputRule(ofstream* file)
@@ -370,9 +388,9 @@ void Symbol_Rule_List::outputListRule(ofstream* file)
     (*file) << "\t/* Empty line */ {$$ = new " << name << "_List();}" << endl;
     (*file) << "|\t" << name << "_ListIter "  << " {$$ = $1;}" << endl;
     (*file) << ';' << endl;
-    if (terminalTokens.lookup(name) == -1)
+    if (terminalTokens.find(name) == terminalTokens.end())
     {
-        if (lexModeTable.lookup(name) == -1)
+        if (lexModeTable.find(name) == lexModeTable.end())
         {
             (*file) << name << "_ListIter:" << endl;
             (*file) << '\t' << name  << " {$$ = new " << name << "_List(); $$->add($1);}" << endl;
@@ -435,15 +453,15 @@ Token_Rule2::Token_Rule2(char* _id, char* _string)
 :Token_Rule(_id)
 {
     string = _string;
-    stringAliases.add(string,this);
+    stringAliases[string] = this;
 }
 Symbol_Rule_CHARACTER::Symbol_Rule_CHARACTER(char _character)
 {
     nullTerminator = '\0';
     character = _character;
-    if (characterLiterals.lookup(&character) == -1)
+    if (characterLiterals.find(&character) == characterLiterals.end())
     {
-        characterLiterals.add(&character,NULL);
+        characterLiterals[string(&character)] = NULL;
     }
 }
 Symbol_Rule_ID::Symbol_Rule_ID(char* _name)
@@ -454,7 +472,7 @@ Symbol_Rule_List::Symbol_Rule_List(char* _name, bool _canBeEmpty)
 {
     name = _name;
     canBeEmpty = _canBeEmpty;
-    listRules.add(name,this);
+    listRules[name] = this;
 }
 
 

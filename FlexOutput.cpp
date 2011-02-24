@@ -4,7 +4,7 @@ using namespace std;
 #include <stack>
 #include <sstream>
 std::unordered_map<std::string,unsigned int> LexCommand_Rule::rulesPerToken;
-extern SymbolTable<void*> characterLiterals;
+extern std::unordered_map<std::string,void*> characterLiterals;
 
 void outputFile(ofstream* outfile, const char* infileName)
 {
@@ -20,9 +20,11 @@ void outputFile(ofstream* outfile, const char* infileName)
 void outputCharacterLiteralFlexRule(ofstream* file)
 {
     (*file) << '[';
-    for (int i = 0; i < characterLiterals.size(); i++)
+    auto iter = characterLiterals.begin();
+    while (iter != characterLiterals.end())
     {
-        (*file) << characterLiterals[i][0];
+        (*file) << iter->first[0];
+        iter++;
     }
     (*file) << "] copyString(); count(yyleng); return yytext[0];" << endl;
 }

@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <string>
-
+/*
 template <typename T>
 struct SymbolTableData
 {
@@ -65,3 +65,4 @@ int SymbolTable<T>::size()
 {
     return strings.size();
 }
+*/
