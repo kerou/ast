@@ -1,8 +1,10 @@
 #include "ParserOutputEgg.h"
+#include "SymbolTable.h"
 using namespace std;
 #include <stack>
 #include <sstream>
 std::unordered_map<std::string,unsigned int> LexCommand_Rule::rulesPerToken;
+extern SymbolTable<void*> characterLiterals;
 
 void outputFile(ofstream* outfile, const char* infileName)
 {
@@ -15,7 +17,15 @@ void outputFile(ofstream* outfile, const char* infileName)
         if (!preamble.good()) break;
     }
 }
-
+void outputCharacterLiteralFlexRule(ofstream* file)
+{
+    (*file) << '[';
+    for (int i = 0; i < characterLiterals.size(); i++)
+    {
+        (*file) << characterLiterals[i][0];
+    }
+    (*file) << "] copyString(); count(yyleng); return yytext[0];" << endl;
+}
 void ParserOutput::outputFlex()
 {
     ofstream file("TestOutput.l");
@@ -28,6 +38,11 @@ void ParserOutput::outputFlex()
     file << "%%" << endl;
 
     lexModes->outputFlexRules(&file);
+
+    outputCharacterLiteralFlexRule(&file);
+
+    file << "[ \\t\\r] count(yyleng); whitespace();" << endl;
+    file << "[\\n] endline(); whitespace();" << endl;
 
     file << "%%" << endl;
 
@@ -45,7 +60,7 @@ void LexModes_Rule::outputFlexDeclarations(ofstream* file)
 
 void LexMode_Rule::outputFlexDeclarations(ofstream* file)
 {
-    (*file) << "%x " << id << "_Mode" << endl;
+    (*file) << "%s " << id << "_Mode" << endl;
     rules->outputFlexDeclarations(file);
 }
 void LexRules_Rule::outputFlexDeclarations(ofstream* file)
@@ -66,7 +81,7 @@ void LexCommand_Rule::outputFlexDeclaration(ofstream* file, char* id)
     {
         string s(id);
         unsigned int number = rulesPerToken[s]++;
-        (*file) << "%x " << id << "_Mode" << number << endl;
+        (*file) << "%s " << id << "_Mode" << number << endl;
     }
 }
 
@@ -99,18 +114,18 @@ void LexCommand_Rule::outputFlexRule(ofstream* file, char* id, char* mode)
     unsigned int size = regexes.size();
     if (size == 1)
     {
-        (*file) << '<' << mode << "_Mode" << '>' << regexes[0] << " copyString(); return " << id << ';' << endl << endl;
+        (*file) << '<' << mode << "_Mode" << '>' << regexes[0] << " copyString(); count(yyleng); return " << id << ';' << endl << endl;
     }
     else
     {
         string s(id);
         unsigned int number = rulesPerToken[s]++;
-        (*file) << '<' << mode << "_Mode" << '>' << regexes[0] << " pushMode(" << id << "_Mode" << number << "); appendToStringBuffer();" << endl;
+        (*file) << '<' << mode << "_Mode" << '>' << regexes[0] << " pushMode(" << id << "_Mode" << number << "); count(yyleng); appendToStringBuffer();" << endl;
         for (unsigned int i = 1; i < size-1; i++)
         {
-            (*file) << '<' << id << "_Mode" << number << '>' << regexes[i] << " appendToStringBuffer();" << endl;
+            (*file) << '<' << id << "_Mode" << number << '>' << regexes[i] << " count(yyleng); appendToStringBuffer();" << endl;
         }
-        (*file) << '<' << id << "_Mode" << number  << '>' << regexes[size-1] << " popMode(); returnStringBuffer(); return " << id << ';' << endl << endl;
+        (*file) << '<' << id << "_Mode" << number  << '>' << regexes[size-1] << " popMode(); count(yyleng); returnStringBuffer(); return " << id << ';' << endl << endl;
     }
 }
 

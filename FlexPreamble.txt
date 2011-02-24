@@ -10,6 +10,7 @@ extern "C"
 /// Text counting functions
 void count(int yyleng);
 void endline();
+void whitespace();
 /// String concatenating functions
 void appendToStringBuffer();
 void returnStringBuffer();

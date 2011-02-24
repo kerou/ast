@@ -1,0 +1,40 @@
+#include "TestOutput.h"
+RuleTypeBaseClass::RuleTypeBaseClass()
+{
+
+}
+NonTerminalBaseClass::NonTerminalBaseClass(const unsigned short _numargs)
+:numargs(_numargs)
+{
+}
+void NonTerminalBaseClass::outputMatchedText(std::ostream* stream)
+{
+	for (unsigned short i = 0; i < numargs; i++)
+	{
+		args[i]->outputMatchedText(stream);
+	}
+}
+TerminalTokenBaseClass::TerminalTokenBaseClass(char* _matchedText, char* _preceedingWhitespace)
+{
+    matchedText = _matchedText;
+    preceedingWhitespace = _preceedingWhitespace;
+}
+void TerminalTokenBaseClass::outputMatchedText(std::ostream* stream)
+{
+	(*stream) << preceedingWhitespace << matchedText;
+}
+ListRuleBaseClass::ListRuleBaseClass()
+{
+}
+void ListRuleBaseClass::outputMatchedText(std::ostream* stream)
+{
+}
+CharacterLiteral_Type::CharacterLiteral_Type(char _character, char* _preceedingWhitespace)
+{
+	character = _character;
+	preceedingWhitespace = _preceedingWhitespace;
+}
+void CharacterLiteral_Type::outputMatchedText(std::ostream* stream)
+{
+	(*stream) << '\'' << character << '\'';
+}

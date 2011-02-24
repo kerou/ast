@@ -1,18 +1,26 @@
 #include <stack>
+#include <vector>
+#include <iostream>
 #include <string>
 #include <cstring>
 int column = 1;
 int line  = 1;
 std::string stringBuffer;
+std::string whitespaceBuffer;
+std::vector<std::string> text;
 std::stack<int> modeStack({INITIAL});
 void count(int yyleng)
 {
     column += yyleng;
 }
-void endLine()
+void endline()
 {
     line++;
     column = 1;
+}
+void whitespace()
+{
+    whitespaceBuffer.append(yytext);
 }
 void appendToStringBuffer()
 {
@@ -20,9 +28,14 @@ void appendToStringBuffer()
 }
 void returnStringBuffer()
 {
-    yylval.string = new char[stringBuffer.size()];
-    strcpy(yylval.string,stringBuffer.c_str());
+	//text.push_back(whitespaceBuffer);
+	text.push_back(stringBuffer);
+    yylval.matchedText.string = new char[stringBuffer.size()];
+    strcpy(yylval.matchedText.string,stringBuffer.c_str());
     stringBuffer.clear();
+    yylval.matchedText.preceedingWhitespace = new char[whitespaceBuffer.size()];
+    strcpy(yylval.matchedText.preceedingWhitespace,whitespaceBuffer.c_str());
+    whitespaceBuffer.clear();
 }
 void pushMode(int mode)
 {
@@ -36,6 +49,39 @@ void popMode()
 }
 void copyString()
 {
-    yylval.string = new char[yyleng];
-    strcpy(yylval.string,yytext);
+	//text.push_back(whitespaceBuffer);
+	text.push_back(yytext);
+    yylval.matchedText.string = new char[yyleng];
+    strcpy(yylval.matchedText.string,yytext);
+    yylval.matchedText.preceedingWhitespace = new char[whitespaceBuffer.size()];
+    strcpy(yylval.matchedText.preceedingWhitespace,whitespaceBuffer.c_str());
+	whitespaceBuffer.clear();
+}
+#include <cstdio>
+#include <fstream>
+bool error = false;
+void yyerror(const char* c)
+{
+	error = true;
+	printf("%s\n",c);
+}
+int yyparse();
+extern FILE* yyin;
+extern Script_Type* parserReturn;
+int main()
+{
+	yyin = fopen("TestScript.txt","r");
+	yyparse();
+	if (error)
+	{
+		for (unsigned int i = 0; i < text.size(); i++)
+		{
+			std::cout << text[i] << std::endl;
+		}
+	}
+	else
+	{
+		std::ofstream file("TestOutput.txt");
+		parserReturn->outputMatchedText(&std::cout);
+	}
 }

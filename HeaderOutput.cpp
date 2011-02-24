@@ -6,6 +6,7 @@ using namespace std;
 extern SymbolTable<void*> characterLiterals;
 extern SymbolTable<Token_Rule*> terminalTokens;
 extern SymbolTable<Symbol_Rule_List*> listRules;
+extern SymbolTable<Token_Rule2*> stringAliases;
 void outputListTypeDeclarations(ofstream* file)
 {
     for (int i = 0; i < listRules.size(); i++)
@@ -17,7 +18,7 @@ void outputListTypes(ofstream* file)
 {
     for (int i = 0; i < listRules.size(); i++)
     {
-        (*file) << "class " << listRules[i] << "_List" << endl;
+        (*file) << "class " << listRules[i] << "_List: public ListRuleBaseClass" << endl;
         (*file) << '{' << endl;
         (*file) << "public:" << endl;
         (*file) << '\t' << listRules[i] << "_List();" << endl;
@@ -29,12 +30,11 @@ void outputListTypes(ofstream* file)
         (*file) << "};" << endl;
     }
 }
+void outputFile(ofstream* outfile, const char* infileName);
 void ParserOutput::outputHeader()
 {
     ofstream file("TestOutput.h");
-
-    file << "#pragma once" << endl;
-    /// Forward declarations
+    outputFile(&file,"HeaderPreamble.txt");
     file << "/// Forward declarations of all types" << endl;
     rules->outputTypeDeclarations(&file);
     file << "/// List rule types" << endl;
@@ -44,29 +44,21 @@ void ParserOutput::outputHeader()
     {
         file << "class " << terminalTokens[i].string << "_Type;" << endl;
     }
-    file << "/// Character literal aliases" << endl;
-    for (int i = 0; i < characterLiterals.size(); i++)
-    {
-        int literalInt = characterLiterals[i][0];
-        file << "class LitChar" << literalInt << ';' << endl;
-    }
+    file << "/// Character literal" << endl;
+    file << "class CharacterLiteral_Type;" << endl;
     /// Type definitions
     file << "/// Actual declarations" << endl;
     file << "/// User defined rules" << endl;
     rules->outputTypes(&file);
     file << "/// List rules types" << endl;
-    file << "#include <vector>" << endl;
     outputListTypes(&file);
+    file << "/// Terminal tokens types" << endl;
     for (int i = 0; i < terminalTokens.size(); i++)
     {
-        file << "class " << terminalTokens[i].string << "_Type" << endl;
+        file << "class " << terminalTokens[i].string << "_Type: public TerminalTokenBaseClass" << endl;
         file << '{' << endl;
         file << "public:" << endl;
-        file << '\t' << terminalTokens[i].string << "_Type(";
-        terminalTokens[i].userData->outputConstructorArguments(&file);
-        file << ");" << endl;
-        file << "private:" << endl;
-        file << "\tchar* matchedText;" << endl;
+        file << '\t' << terminalTokens[i].string << "_Type(char* _matchedText, char* _preceedingWhitespace);" << endl;
         file << "};" << endl;
     }
 }
@@ -103,17 +95,19 @@ void BisonRule_Rule::outputType(ofstream* file)
 }
 void DerivationRules_Rule::outputType(ofstream* file, char* typeName)
 {
-    (*file) << "class " << typeName << endl;
+    (*file) << "class " << typeName << ": public NonTerminalBaseClass" << endl;
     (*file) << '{' << endl;
     (*file) << "public:" << endl;
     (*file) << '\t' << typeName << '(';
     if (rules.size() == 1)
         rules[0]->outputConstructorArguments(file);
+    else
+        (*file) << "const unsigned short _numargs";
     (*file) << ");" << endl;
     (*file) << "\tvirtual ~" << typeName << "();" << endl;
-    rules[0]->outputGetDeclarations(file);
+    if (rules.size() == 1)
+        rules[0]->outputGetDeclarations(file);
     (*file) << "private:" << endl;
-    rules[0]->outputMemberDeclarations(file);
     (*file) << "};" << endl;
     if (rules.size() != 1)
     {
@@ -128,7 +122,6 @@ void DerivationRules_Rule::outputType(ofstream* file, char* typeName)
             (*file) << "\tvirtual ~" << typeName << i+1 << "();" << endl;
             rules[i]->outputGetDeclarations(file);
             (*file) << "private:" << endl;
-            rules[i]->outputMemberDeclarations(file);
             (*file) << "};" << endl;
         }
     }
@@ -145,8 +138,10 @@ void Symbols_Rule::outputConstructorArguments(ofstream* file)
         }
     }
 }
+#include <cassert>
 void Symbols_Rule::outputMemberDeclarations(ofstream* file)
 {
+    assert(false); /// FIXME just remove all these functions
     for (unsigned int i = 0; i < symbols.size(); i++)
     {
         (*file) << '\t';
@@ -160,7 +155,9 @@ void Symbols_Rule::outputGetDeclarations(ofstream* file)
     {
         (*file) << '\t';
         symbols[i]->outputType(file);
-        (*file) << "* getArg" << i+1 << "(){return arg" << i+1 << ";}" << endl;
+        (*file) << "* getArg" << i+1 << "(){return (";
+        symbols[i]->outputType(file);
+        (*file) << "*)args[" << i << "];}" << endl;
     }
 }
 void Symbol_Rule_ID::outputType(ofstream* file)
@@ -178,43 +175,23 @@ void Symbol_Rule_CHARACTER::outputType(ofstream* file)
     int literalInt = character;
     (*file) << "LitChar" << literalInt << ' ';
 #endif*/
-    (*file) << "char ";
+    (*file) << "CharacterLiteral_Type ";
 }
 void Symbol_Rule_STRING::outputType(ofstream* file)
 {
-    (*file) << '"' << string << '"' << ' ';
+    Token_Rule2* token = stringAliases[stringAliases.lookup(string)].userData;
+    (*file) << token->getId() << "_Type" << ' ';
 }
 void Symbol_Rule_List::outputType(ofstream* file)
 {
     (*file) << name << "_List ";
 }
-void Token_Rule1::outputConstructorArguments(ofstream* file)
+#include <cassert>
+void Token_Rule::outputConstructorArguments(ofstream* file)
 {
-    (*file) << "char* _matchedText";
+    assert(false);
+    /// Will always be (char* matchedText, char* preceedingWhitespace)
 }
-void Token_Rule2::outputConstructorArguments(ofstream* file)
-{
-    (*file) << "char* _matchedText";
-}
-UnionMembers_Rule* ParserOutput::getUnion()
-{
-    return unionDef;
-}
-#include <cstring>
-UnionMember_Rule* UnionMembers_Rule::getMember(char* id)
-{
-    if (id != NULL)
-    for (unsigned int i = 0; i < members.size(); i++)
-    {
-        if (strcmp(members[i]->getName(),id)==0)
-        {
-            return members[i];
-        }
-    }
-    return NULL;
-}
-
-
 
 
 

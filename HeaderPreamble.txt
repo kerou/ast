@@ -1,0 +1,47 @@
+#pragma once
+#pragma pack(0)
+#include <ostream>
+/// Base class for all rules
+class RuleTypeBaseClass
+{
+public:
+	RuleTypeBaseClass();
+	virtual void outputMatchedText(std::ostream* stream)=0;
+};
+class NonTerminalBaseClass: public RuleTypeBaseClass
+{
+public:
+	NonTerminalBaseClass(const unsigned short _numargs);
+	void outputMatchedText(std::ostream* stream);
+protected:
+	RuleTypeBaseClass** args;
+	const unsigned short numargs;
+};
+class TerminalTokenBaseClass: public RuleTypeBaseClass
+{
+public:
+	TerminalTokenBaseClass(char* _matchedText, char* _preceedingWhitespace);
+	void outputMatchedText(std::ostream* stream);
+private:
+	char* matchedText;
+	char* preceedingWhitespace;
+};
+#include <vector>
+class ListRuleBaseClass: public RuleTypeBaseClass
+{
+public:
+	ListRuleBaseClass();
+	void outputMatchedText(std::ostream* stream);
+	unsigned int size(){return list.size();}
+protected:
+	std::vector<RuleTypeBaseClass*> list;
+};
+class CharacterLiteral_Type: public RuleTypeBaseClass
+{
+public:
+	CharacterLiteral_Type(char _character, char* _preceedingWhitespace);
+	void outputMatchedText(std::ostream* stream);
+private:
+	char character;
+	char* preceedingWhitespace;
+};

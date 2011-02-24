@@ -4,7 +4,6 @@
 #include <unordered_map>
 #include <string>
 class BisonRules_Rule;
-class UnionMembers_Rule;
 class BisonDeclarations_Rule;
 class LexModes_Rule;
 extern class ParserOutput
@@ -12,8 +11,6 @@ extern class ParserOutput
 public:
     ParserOutput();
     void addRules(BisonRules_Rule* _rules);
-    void addUnion(UnionMembers_Rule* _unionDef);
-    UnionMembers_Rule* getUnion();
     void addDeclarations(BisonDeclarations_Rule* _declarations);
     void addLexModes(LexModes_Rule* _lexModes);
     void output();
@@ -23,7 +20,6 @@ private:
     void outputCpp();
     void outputFlex();
     BisonRules_Rule* rules;
-    UnionMembers_Rule* unionDef;
     BisonDeclarations_Rule* declarations;
     LexModes_Rule* lexModes;
 }g_ParserOutput;
@@ -110,6 +106,7 @@ public:
     void outputType(std::ofstream* file);
 private:
     char character;
+    char nullTerminator;
 };
 class Symbol_Rule_STRING: public Symbol_Rule
 {
@@ -123,49 +120,15 @@ private:
 class Symbol_Rule_List: public Symbol_Rule
 {
 public:
-    Symbol_Rule_List(char* _name);
+    Symbol_Rule_List(char* _name, bool _canBeEmpty);
     void outputRule(std::ofstream* file);
     void outputType(std::ofstream* file);
     void outputListRule(std::ofstream* file);
 private:
     char* name;
+    bool canBeEmpty;
 };
 
-/// **** UNION SECTION ***
-class UnionMember_Rule
-{
-public:
-    UnionMember_Rule();
-    virtual void outputUnionMember(std::ofstream* file)=0;
-    char* getTypeName(){return typeName;}
-    char* getName(){return name;}
-protected:
-    char* typeName,* name;
-
-};
-class UnionMembers_Rule
-{
-public:
-    UnionMembers_Rule();
-    UnionMembers_Rule(UnionMember_Rule* member);
-    void addMember(UnionMember_Rule* member);
-    UnionMember_Rule* getMember(char* id);
-    void outputUnionMembers(std::ofstream* file);
-private:
-    std::vector<UnionMember_Rule*> members;
-};
-class UnionMember_Rule1: public UnionMember_Rule
-{
-public:
-    UnionMember_Rule1(char* _typename, char* _name);
-    void outputUnionMember(std::ofstream* file);
-};
-class UnionMember_Rule2: public UnionMember_Rule
-{
-public:
-    UnionMember_Rule2(char* _typename, char* _name);
-    void outputUnionMember(std::ofstream* file);
-};
 /// **** DECLARATIONS SECTION ****
 class BisonDeclaration_Rule;
 class BisonDeclarations_Rule
@@ -188,14 +151,19 @@ public:
     virtual void outputAliasDeclaration(std::ofstream* file){}
 };
 /// Bison declaration derivations
-class UnionDeclaration_Rule;
+class SymTableDeclaration_Rule;
 class StartDeclaration_Rule;
 class TokenDeclaration_Rule;
 class TypeDeclaration_Rule;
+class SymTableInput_Rule;
+class SymTableOutput_Rule;
+class SymTableNotEqual_Rule;
 class BisonDeclaration_Rule1: public BisonDeclaration_Rule
 {
 public:
-    BisonDeclaration_Rule1(UnionDeclaration_Rule* rule){}
+    BisonDeclaration_Rule1(SymTableDeclaration_Rule* _symTable){symTable = _symTable;}
+private:
+    SymTableDeclaration_Rule* symTable;
 };
 class BisonDeclaration_Rule2: public BisonDeclaration_Rule
 {
@@ -217,10 +185,58 @@ class BisonDeclaration_Rule4: public BisonDeclaration_Rule
 public:
     BisonDeclaration_Rule4(TypeDeclaration_Rule* rule){}
 };
-class UnionDeclaration_Rule
+class BisonDeclaration_Rule5: public BisonDeclaration_Rule
 {
 public:
-    UnionDeclaration_Rule(UnionMembers_Rule* members);
+    BisonDeclaration_Rule5(SymTableInput_Rule* _tableInput){tableInput = _tableInput;}
+private:
+    SymTableInput_Rule* tableInput;
+};
+class BisonDeclaration_Rule6: public BisonDeclaration_Rule
+{
+public:
+    BisonDeclaration_Rule6(SymTableOutput_Rule* _tableOutput){tableOutput = _tableOutput;}
+private:
+    SymTableOutput_Rule* tableOutput;
+};
+class BisonDeclaration_Rule7: public BisonDeclaration_Rule
+{
+public:
+    BisonDeclaration_Rule7(SymTableNotEqual_Rule* _tableNotEqual){tableNotEqual = _tableNotEqual;}
+private:
+    SymTableNotEqual_Rule* tableNotEqual;
+};
+class SymTableDeclaration_Rule
+{
+public:
+    SymTableDeclaration_Rule(std::vector<char*>* _typeList, char* _id){typeList = _typeList; id = _id;}
+private:
+    std::vector<char*>* typeList;
+    char* id;
+};
+class SymTableInput_Rule
+{
+public:
+    SymTableInput_Rule(char* _tableName, char* _inputTokenName){tableName = _tableName; inputTokenName = _inputTokenName;}
+private:
+    char* tableName;
+    char* inputTokenName;
+};
+class SymTableOutput_Rule
+{
+public:
+    SymTableOutput_Rule(char* _tableName, char* _outputTokenName){tableName = _tableName; outputTokenName = _outputTokenName;}
+private:
+    char* tableName;
+    char* outputTokenName;
+};
+class SymTableNotEqual_Rule
+{
+public:
+    SymTableNotEqual_Rule(char* _tableName, char* _notEqualTokenName){tableName = _tableName; notEqualTokenName = _notEqualTokenName;}
+private:
+    char* tableName;
+    char* notEqualTokenName;
 };
 class TokenList_Rule;
 class TokenDeclaration_Rule
@@ -241,7 +257,14 @@ public:
     virtual void outputUnionMember(std::ofstream* file)=0;
     virtual void outputAliasDeclaration(std::ofstream* file)=0;
     void outputSemanticAction(std::ofstream* file);
-    virtual void outputConstructorArguments(std::ofstream* file)=0;
+    void outputConstructorArguments(std::ofstream* file);
+    const char* getId(){return id;}
+    enum Type
+    {
+        token1,
+        token2,
+    };
+    virtual Type getType()=0;
 protected:
     char* id;
 };
@@ -263,7 +286,7 @@ public:
     void outputDeclaration(std::ofstream* file);
     void outputUnionMember(std::ofstream* file);
     void outputAliasDeclaration(std::ofstream* file);
-    void outputConstructorArguments(std::ofstream* file);
+    Type getType(){return token1;}
 private:
 };
 class Token_Rule2: public Token_Rule
@@ -273,7 +296,8 @@ public:
     void outputDeclaration(std::ofstream* file);
     void outputUnionMember(std::ofstream* file);
     void outputAliasDeclaration(std::ofstream* file);
-    void outputConstructorArguments(std::ofstream* file);
+    Type getType(){return token2;}
+    const char* getString(){return string;}
 private:
     char* string;
 };

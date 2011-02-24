@@ -21,7 +21,7 @@
     int mode = INITIAL;
 
     int codeInsertionType = -1; // CODE_INSERTION or PCNT_CODE_INSERTION, or -1 for neither
-
+void lexRulesMode();
 extern "C"
 {
     int yywrap()
@@ -43,7 +43,7 @@ extern "C"
 							Code insertion parsing
 						     */
 <INITIAL>"%{" BEGIN(CODE_INSERTION_STATE); codeInsertionType = PCNT_CODE_INSERTION; stringBuffer.clear();COUNT
-<INITIAL>\{ BEGIN(CODE_INSERTION_STATE); codeInsertionType = CODE_INSERTION; stringBuffer.clear();COUNT
+<CODE_INSERTION_STATE>\{ BEGIN(CODE_INSERTION_STATE); codeInsertionType = CODE_INSERTION; stringBuffer.clear();COUNT
 <CODE_INSERTION_STATE>"%}" BEGIN(mode); COPY_STRING_BUFFER;COUNT RETURN(codeInsertionType);
 <CODE_INSERTION_STATE>\} BEGIN(mode); COPY_STRING_BUFFER;COUNT RETURN(codeInsertionType);
 <CODE_INSERTION_STATE>. stringBuffer.push_back(yytext[0]);COUNT
@@ -69,7 +69,7 @@ C-style comment parsing
 <C_COMMENT_STATE>\n LINE
 
 <REGEX_MODE>;\n BEGIN(LEX_MODES_STATE); COUNT LINE RETURN(';');
-<REGEX_MODE>.+ yylval.string = new char[yyleng]; strcpy(yylval.string,yytext);COUNT LINE RETURN(REGULAR_EXPRESSION);printf(yytext);
+<REGEX_MODE>^.+ lexRulesMode(); yylval.string = new char[yyleng]; strcpy(yylval.string,yytext);COUNT LINE RETURN(REGULAR_EXPRESSION);printf(yytext);
 <REGEX_MODE>\n
 
 
@@ -83,12 +83,15 @@ C-style comment parsing
 "%type" COUNT RETURN (PCNT_TYPE);
 "%union" COUNT RETURN (PCNT_UNION);
 "%start" COUNT RETURN (PCNT_START);
+"%symtable" COUNT RETURN (PCNT_SYM_TABLE);
 
 
-[a-zA-Z_][a-zA-Z0-9_]* yylval.string = new char[yyleng]; strcpy(yylval.string,yytext);COUNT RETURN (ID);
+[a-zA-Z_][a-zA-Z0-9_]* yylval.string = new char[yyleng+5]; memcpy(yylval.string,yytext,yyleng); yylval.string[yyleng] = '\0'; COUNT RETURN (ID);
 <INITIAL,LEX_MODES_STATE>[{}] COUNT RETURN (yytext[0]);
-\[] COUNT RETURN (SQUARE_BRACKETS);
 [;:|<>*{}] COUNT RETURN (yytext[0]);
+\<< COUNT RETURN (LEFT_SHIFT);
+>> COUNT RETURN (RIGHT_SHIFT);
+!= COUNT RETURN (NOT_EQUAL);
 
 \n LINE
 [\ \t] COUNT

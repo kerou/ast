@@ -44,50 +44,16 @@ Symbol_Rule_STRING::Symbol_Rule_STRING(char* _string)
   string = _string;
 }
 
-UnionMembers_Rule::UnionMembers_Rule()
-{
-}
-UnionMembers_Rule::UnionMembers_Rule(UnionMember_Rule* rule)
-{
-   members.push_back(rule);
-}
-void UnionMembers_Rule::addMember(UnionMember_Rule* rule)
-{
-    members.push_back(rule);
-}
-UnionMember_Rule::UnionMember_Rule()
-{
-}
-
-UnionMember_Rule1::UnionMember_Rule1(char* _typename, char* _name)
-{
-    typeName = _typename;
-    name = _name;
-}
-
-UnionMember_Rule2::UnionMember_Rule2(char* _typename, char* _name)
-{
-    name = _name;
-    typeName = new char[strlen(_typename)+2];
-    strcpy(typeName,_typename);
-    typeName[strlen(_typename)] = '*';
-    typeName[strlen(_typename)+1] = '\0';
-}
 /// SemanticActions
 ParserOutput::ParserOutput()
 {
     rules = NULL;
-    unionDef = NULL;
     declarations = NULL;
     lexModes = NULL;
 }
 void ParserOutput::addRules(BisonRules_Rule* _rules)
 {
     rules = _rules;
-}
-void ParserOutput::addUnion(UnionMembers_Rule* _unionDef)
-{
-    unionDef = _unionDef;
 }
 void ParserOutput::addDeclarations(BisonDeclarations_Rule* _declarations)
 {
