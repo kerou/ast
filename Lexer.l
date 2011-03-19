@@ -2,8 +2,32 @@
 
 #include <cstring>
 #include <cstdio>
-#define fileno(__F) ((__F)->_file)
-#include "ParserOutputEgg.h"
+#include <vector>
+
+class BisonRules_Rule;
+class  BisonRule_Rule;
+class  DerivationRules_Rule;
+class  Symbols_Rule;
+class  Symbol_Rule;
+
+class  BisonDeclarations_Rule;
+class  BisonDeclaration_Rule;
+
+class  SymTableDeclaration_Rule;
+class  SymTableInput_Rule;
+class  SymTableOutput_Rule;
+class  SymTableNotEqual_Rule;
+class  StartDeclaration_Rule;
+class  TokenDeclaration_Rule;
+class  TokenList_Rule;
+class  Token_Rule;
+class  TypeDeclaration_Rule;
+
+class  LexModes_Rule;
+class  LexMode_Rule;
+class  LexRules_Rule;
+class  LexRule_Rule;
+class  LexCommand_Rule;
 #include "Parser.tab.hpp"
 #include <string>
 #include <vector>
@@ -18,7 +42,7 @@
     int line = 1;
     int character = 1;
     int lastToken = -1;
-    int mode = INITIAL;
+    int mode = 0;
 
     int codeInsertionType = -1; // CODE_INSERTION or PCNT_CODE_INSERTION, or -1 for neither
 void lexRulesMode();

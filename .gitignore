@@ -2,12 +2,7 @@
 /.deps
 *.o
 *.exe
-Makefile
 *.tab.cpp
 *.tab.hpp
 *.lex.cpp
-*.yy.cpp
-*.cbp
-*.depend
-*.layout
-Test*
+astbin

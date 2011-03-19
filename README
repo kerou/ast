@@ -1,0 +1,4 @@
+This is now in a vaguely distributable format, with a makefile and example script
+It is not however particularly usable, aside from the few missing features it outputs a main function just for ease of testing.
+The example script is for a grammer with only one valid input: "start ;"
+The makefile copies the executable and resource files into ~/bin, so unless you change it make sure 1) it exists 2) your bash looks in there and 3) you pass --directory ~/bin/ to ast when using it

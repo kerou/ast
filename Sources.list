@@ -1,0 +1,1 @@
+SOURCES=main.cpp Parser.tab.cpp Lexer.lex.cpp ParserOutputEgg.cpp RulesOutput.cpp CppOutput.cpp HeaderOutput.cpp FlexOutput.cpp

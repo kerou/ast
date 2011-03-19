@@ -6,6 +6,7 @@
 class BisonRules_Rule;
 class BisonDeclarations_Rule;
 class LexModes_Rule;
+extern const char* resourceDirectory;
 extern class ParserOutput
 {
 public:

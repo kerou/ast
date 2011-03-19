@@ -1,0 +1,51 @@
+#!/bin/bash
+verbose=0;
+all=0;
+keep=0;
+includedirectory="/usr/local/"
+inputfile="invalidfile"
+inputfileset=0;
+outputfile="libout.a"
+
+while [[ $# > 0 && $1 == * ]]; do
+    case "$1" in
+	-h|--help|-\?) cat ~/bin/ast_help_file; exit 0;;
+	-v|--version) echo "ast 0.1"; exit 0;;
+	-V|--verbose) verbose=1; echo "No verbosity to be had here"; shift;;
+	-B|--directory) if (($# > 1)); then
+	    includedirectory=$2; shift 2
+	    else
+	    echo "$1 requires an argument" 1>&2
+	    exit 1
+	    fi ;;
+	-a|--compile-all) all=1; shift;;
+	-k|--keep-int) keep=1; shift;;
+	-o) if (($# > 1)); then
+	    outputfile=$2; shift 2
+	    else 
+	    echo "-o requires an argument" 1>&2
+	    exit 1
+	    fi ;;
+	--) shift; break;;
+	-*) echo "invalid option: $1" 1>&2; exit 1;;
+	*) inputfile=$1; inputfileset=1; shift;;
+    esac
+done
+if ((inputfileset == 0)); then
+    echo "ast: No input file"
+else
+    astbin $inputfile $includedirectory
+    if ((all == 1)); then
+	bison -d -o TestOutput.tab.cpp TestOutput.y
+	flex -oTestOutput.yy.cpp TestOutput.l
+	g++ -c -std=c++0x TestOutput.cpp -o TestOutput.o
+	g++ -c -std=c++0x TestOutput.tab.cpp
+	g++ -c -std=c++0x TestOutput.yy.cpp
+	g++ -static TestOutput.o TestOutput.tab.o TestOutput.yy.o -o $outputfile
+	if ((keep == 0)); then
+	    rm TestOutput.tab.cpp TestOutput.tab.hpp TestOutput.tab.o TestOutput.y TestOutput.l TestOutput.yy.cpp TestOutput.cpp TestOutput.o TestOutput.yy.o
+	fi
+    fi
+fi
+
+exit

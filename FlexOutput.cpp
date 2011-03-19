@@ -3,12 +3,17 @@
 using namespace std;
 #include <stack>
 #include <sstream>
+#include <iostream>
 std::unordered_map<std::string,unsigned int> LexCommand_Rule::rulesPerToken;
 extern std::unordered_map<std::string,void*> characterLiterals;
 
 void outputFile(ofstream* outfile, const char* infileName)
 {
     ifstream preamble(infileName);
+    if (!preamble.is_open())
+      {
+	std::cout << "Failed to open file " << infileName << std::endl;
+      }
     for ( ;; )
     {
         char string[100];
@@ -32,8 +37,12 @@ void ParserOutput::outputFlex()
 {
     ofstream file("TestOutput.l");
 
-    outputFile(&file,"FlexPreamble.txt");
-
+    {
+      std::string fullFilename(resourceDirectory);
+      fullFilename = fullFilename + "astres/FlexPreamble.txt";
+      outputFile(&file,fullFilename.c_str());
+    }
+    
     lexModes->outputFlexDeclarations(&file);
     LexCommand_Rule::clearMap();
 
@@ -47,8 +56,11 @@ void ParserOutput::outputFlex()
     file << "[\\n] endline(); whitespace();" << endl;
 
     file << "%%" << endl;
-
-    outputFile(&file,"FlexPostamble.txt");
+    {
+      std::string fullFilename(resourceDirectory);
+      fullFilename = fullFilename + "astres/FlexPostamble.txt";
+      outputFile(&file,fullFilename.c_str());
+    }
 
 }
 /// Flex declarations

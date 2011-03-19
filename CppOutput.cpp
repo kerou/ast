@@ -24,7 +24,9 @@ void outputFile(ofstream* outfile, const char* infileName);
 void ParserOutput::outputCpp()
 {
     ofstream file("TestOutput.cpp");
-    outputFile(&file,"SourcePreamble.txt");
+    std::string fullFilename(resourceDirectory);
+    fullFilename = fullFilename + "astres/SourcePreamble.txt";
+    outputFile(&file,fullFilename.c_str());
     rules->outputTypeDefinitions(&file);
     outputListCode(&file);
     auto iter = terminalTokens.begin();

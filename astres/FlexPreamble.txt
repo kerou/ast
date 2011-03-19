@@ -22,8 +22,6 @@ void copyString();
 
 #include "TestOutput.h"
 #include "TestOutput.tab.hpp"
-/// Fix for c++0x
-#define fileno(__F) ((__F)->_file)
 
 
 %}

@@ -38,7 +38,11 @@ void outputFile(ofstream* outfile, const char* infileName);
 void ParserOutput::outputHeader()
 {
     ofstream file("TestOutput.h");
-    outputFile(&file,"HeaderPreamble.txt");
+    {
+      std::string fullFilename(resourceDirectory);
+      fullFilename = fullFilename + "astres/HeaderPreamble.txt";
+      outputFile(&file,fullFilename.c_str());
+    }
     file << "/// Forward declarations of all types" << endl;
     rules->outputTypeDeclarations(&file);
     file << "/// List rule types" << endl;
