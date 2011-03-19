@@ -1,5 +1,5 @@
-#include "ParserOutputEgg.h"
-#include "SymbolTable.h"
+#include "ParserOutputEgg.hpp"
+#include "SymbolTable.hpp"
 #include <cstring>
 extern std::unordered_map<std::string,LexMode_Rule*> lexModeTable;
 ParserOutput g_ParserOutput;
@@ -47,52 +47,52 @@ Symbol_Rule_STRING::Symbol_Rule_STRING(char* _string)
 /// SemanticActions
 ParserOutput::ParserOutput()
 {
-    rules = NULL;
-    declarations = NULL;
-    lexModes = NULL;
+  rules = NULL;
+  declarations = NULL;
+  lexModes = NULL;
 }
 void ParserOutput::addRules(BisonRules_Rule* _rules)
 {
-    rules = _rules;
+  rules = _rules;
 }
 void ParserOutput::addDeclarations(BisonDeclarations_Rule* _declarations)
 {
-    declarations = _declarations;
+  declarations = _declarations;
 }
 void ParserOutput::addLexModes(LexModes_Rule* _lexModes)
 {
-    lexModes = _lexModes;
+  lexModes = _lexModes;
 }
 void ParserOutput::output()
 {
-    outputBison();
-    outputHeader();
-    outputCpp();
-    outputFlex();
+  outputBison();
+  outputHeader();
+  outputCpp();
+  outputFlex();
 }
 /// Lex rules
 void LexModes_Rule::add(LexMode_Rule* mode)
 {
-    modes.push_back(mode);
+  modes.push_back(mode);
 }
 LexMode_Rule::LexMode_Rule(char* _id, LexRules_Rule* _rules)
 {
-    id = _id;
-    rules = _rules;
-    lexModeTable[id] = this;
+  id = _id;
+  rules = _rules;
+  lexModeTable[id] = this;
 }
 void LexRules_Rule::add(LexRule_Rule* rule)
 {
-    rules.push_back(rule);
+  rules.push_back(rule);
 }
 LexRule_Rule::LexRule_Rule(char* _id, LexCommand_Rule* _command)
 {
-    id = _id;
-    command = _command;
+  id = _id;
+  command = _command;
 }
 void LexCommand_Rule::add(char* regex)
 {
-    regexes.push_back(regex);
+  regexes.push_back(regex);
 }
 
 

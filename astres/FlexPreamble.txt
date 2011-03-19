@@ -20,8 +20,3 @@ void popMode();
 
 void copyString();
 
-#include "TestOutput.h"
-#include "TestOutput.tab.hpp"
-
-
-%}

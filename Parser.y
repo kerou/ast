@@ -1,5 +1,5 @@
 %{
-#include "ParserOutputEgg.h"
+#include "ParserOutputEgg.hpp"
 #include <vector>
 int yylex();
 void yyerror(char*);

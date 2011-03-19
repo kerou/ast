@@ -10,11 +10,10 @@ CXX_DEPENDENCIES=-Wp,-MD,.deps/$(*F).P
 CXX_LINK=$(CXX) $(CFLAGS) $(LDFLAGS) -L.
 DISTDIR=$(top)ast-$(VERSION)
 
-
 all: astbin
 	@cp astbin ~/bin/astbin
 	@cp ast ~/bin/ast
-	@cp -r astres ~/bin/astres
+	@cp -r astres ~/bin/
 
 install: astbin
 	@cp -r astres /usr/local/astres
@@ -41,6 +40,4 @@ tags:
 
 
 clean:
-	rm -f -r .obj .deps *.tab.* *.lex.cpp
-
-
+	rm -f -r .obj .deps *.tab.* *.lex.cpp astbin
