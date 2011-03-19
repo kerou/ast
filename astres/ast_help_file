@@ -1,11 +1,12 @@
 Usage: ast [options] file
 Options:
-  -h, --help		Display this information
-  -v, --version		Display version information
+  -h, --help		Display this information and exit
+  -v, --version		Display version information and exit
   -V, --verbose		Verbosity has no effect at this time
   -B, --directory <dir>	Changes the resource directory to <dir>
   -a, --compile-all	Compiles into a static library
   -k, --keep-int	Doesn't remove intermediary files with --compile-all
+  --clean		Removes all intermediary files left by --keep-int and exit
   -o <file>		Place the output of --compile-all into <file>
 
 For bug reporting instructions, please go fuck yourself.

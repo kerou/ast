@@ -4,6 +4,7 @@
 std::unordered_map<std::string,void*> characterLiterals;
 std::unordered_map<std::string,Token_Rule*> terminalTokens;
 std::unordered_map<std::string,Symbol_Rule_List*> listRules;
+std::unordered_map<std::string,Symbol_Rule_STRING*> stringTokens;
 std::unordered_map<std::string,LexMode_Rule*> lexModeTable;
 std::unordered_map<std::string,Token_Rule2*> stringAliases;
 #include <cstring>
@@ -81,7 +82,10 @@ void LexMode_Rule::outputModeChangingAliasRule(ofstream* file)
 }
 void outputCharacterLiteralDeclarations(ofstream* file)
 {
-  (*file) << "%type <characterWhitespace> ";
+  if (characterLiterals.size() != 0)
+    {
+      (*file) << "%type <characterWhitespace> ";
+    }
   auto iter = characterLiterals.begin();
   while (iter != characterLiterals.end())
     {
@@ -98,6 +102,7 @@ void outputCharacterLiteralAliasRules(ofstream* file)
       char literal = iter->first[0];
       int literalInt = literal;
       (*file) << "LitChar" << literalInt << ":\n\t '" << literal << "' {$$ = new CharacterLiteral_Type('" << literal << "',$1);}\n;\n";
+      (*file) << "|\terror {$$ = NULL; yyerror(\"Expected '" << literal << "'\"); yyerrok;}" << endl;
       iter++;
     }
 }
@@ -121,6 +126,45 @@ void outputAliasRules(ofstream* file)
       iter++;
     }
 }
+void outputStringTokenUnionMembers(ofstream* file)
+{
+  auto iter = stringTokens.begin();
+  while (iter != stringTokens.end())
+    {
+      (*file) << '\t' << iter->first << "_String_Type* " << iter->first << "_String_Type_Return;" << endl;
+      iter++;
+    }
+}
+void outputStringTokenDeclarations(ofstream* file)
+{
+  auto iter = stringTokens.begin();
+  while (iter != stringTokens.end())
+    {
+      (*file) << '\t' << iter->first << "_TOKEN" << endl;
+      iter++;
+    }
+}
+void outputStringTokenAliasDeclarations(ofstream* file)
+{
+  auto iter = stringTokens.begin();
+  while (iter != stringTokens.end())
+    {
+      (*file) << "%type <" << iter->first << "_String_Type_Return> " << iter->first << "_String" << endl;
+      iter++;
+    }
+}
+void outputStringRules(ofstream* file)
+{
+  auto iter = stringTokens.begin();
+  while (iter != stringTokens.end())
+    {
+      (*file) << iter->first << "_String:"  << endl;
+      (*file) << '\t' << iter->first << "_TOKEN {$$ = new " << iter->first << "_String_Type($1.string,$1.preceedingWhitespace);}" << endl;
+      (*file) << "|\terror {$$ = NULL; yyerror(\"Expected \\\"" << iter->first << "\\\"\"); yyerrok;}" << endl;
+      (*file) << ';' << endl;
+      iter++;
+    }
+}
 void ParserOutput::outputBison()
 {
   ofstream file(outputfile + ".y");
@@ -138,6 +182,7 @@ void ParserOutput::outputBison()
   outputListUnionMembers(&file);
   file << "\t/// Union members for the terminal token aliases\n";
   declarations->outputUnionMembers(&file);
+  outputStringTokenUnionMembers(&file);
   file << "\t/// Rule used for all character literal aliases\n";
   file << "\tCharacterLiteral_Type* Character_Alias;" << endl;
   file << "\tstruct" << endl;
@@ -155,6 +200,7 @@ void ParserOutput::outputBison()
 
   file << "/// User-defined terminal tokens\n";
   declarations->outputDeclarations(&file);
+  outputStringTokenDeclarations(&file);
   file << "/// All character literals used" << endl;
   outputCharacterLiteralDeclarations(&file);
   file << "/// Mode changing alias\n";
@@ -162,6 +208,7 @@ void ParserOutput::outputBison()
   outputModeChangingAliasDeclarations(&file);
   file << "/// Terminal token aliases\n";
   declarations->outputAliasDeclarations(&file);
+  outputStringTokenAliasDeclarations(&file);
   file << "/// Character literal aliases\n";
   outputCharacterLiteralAliasDeclarations(&file);
   file << "%%" << endl;
@@ -176,6 +223,7 @@ void ParserOutput::outputBison()
   outputModeChangingAliasRules(&file);
   file << "/// Terminal token alias rules\n";
   outputAliasRules(&file);
+  outputStringRules(&file);
   file << "/// Character literal alias rules\n";
   outputCharacterLiteralAliasRules(&file);
   file << "%%" << endl;
@@ -376,8 +424,9 @@ void Symbol_Rule_CHARACTER::outputRule(ofstream* file)
 }
 void Symbol_Rule_STRING::outputRule(ofstream* file)
 {
-  Token_Rule2* token = stringAliases[string];
-  (*file) << token->getId() << "_Alias ";
+  (*file) << string << "_String ";
+  //  Token_Rule2* token = stringAliases[string];
+  //  (*file) << token->getId() << "_Alias ";
 }
 void Symbol_Rule_List::outputRule(ofstream* file)
 {

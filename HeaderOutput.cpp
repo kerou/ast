@@ -6,6 +6,7 @@ using namespace std;
 extern std::unordered_map<std::string,void*> characterLiterals;
 extern std::unordered_map<std::string,Token_Rule*> terminalTokens;
 extern std::unordered_map<std::string,Symbol_Rule_List*> listRules;
+extern std::unordered_map<std::string,Symbol_Rule_STRING*> stringTokens;
 extern std::unordered_map<std::string,Token_Rule2*> stringAliases;
 void outputListTypeDeclarations(ofstream* file)
 {
@@ -54,6 +55,12 @@ void ParserOutput::outputHeader()
       file << "class " << iter->first << "_Type;" << endl;
       iter++;
     }
+  auto stringIter = stringTokens.begin();
+  while (stringIter != stringTokens.end())
+    {
+      file << "class " << stringIter->first << "_String_Type;" << endl;
+      stringIter++;
+    }
   file << "/// Character literal" << endl;
   file << "class CharacterLiteral_Type;" << endl;
   /// Type definitions
@@ -72,6 +79,16 @@ void ParserOutput::outputHeader()
       file << '\t' << iter->first << "_Type(char* _matchedText, char* _preceedingWhitespace);" << endl;
       file << "};" << endl;
       iter++;
+    }
+  stringIter = stringTokens.begin();
+  while (stringIter != stringTokens.end())
+    {
+      file << "class " << stringIter->first << "_String_Type: public TerminalTokenBaseClass" << endl;
+      file << '{' << endl;
+      file << "public:" << endl;
+      file << '\t' << stringIter->first << "_String_Type(char* _matchedText, char* _preceedingWhitespace);" << endl;
+      file << "};" << endl;
+      stringIter++;
     }
 }
 void BisonRules_Rule::outputTypeDeclarations(ofstream* file)
@@ -114,12 +131,16 @@ void DerivationRules_Rule::outputType(ofstream* file, char* typeName)
   if (rules.size() == 1)
     rules[0]->outputConstructorArguments(file);
   else
-    (*file) << "const unsigned short _numargs";
+    (*file) << "const unsigned short _numargs, const unsigned short _derivationType";
   (*file) << ");" << endl;
   (*file) << "\tvirtual ~" << typeName << "();" << endl;
   if (rules.size() == 1)
     rules[0]->outputGetDeclarations(file);
+  else
+    (*file) << "\tunsigned short getType(){return derivationType;}" << endl;
   (*file) << "private:" << endl;
+  if (rules.size() != 1)
+    (*file) << "\tunsigned short derivationType;" << endl;
   (*file) << "};" << endl;
   if (rules.size() != 1)
     {
@@ -192,8 +213,9 @@ void Symbol_Rule_CHARACTER::outputType(ofstream* file)
 }
 void Symbol_Rule_STRING::outputType(ofstream* file)
 {
-  Token_Rule2* token = stringAliases.find(string)->second;
-  (*file) << token->getId() << "_Type" << ' ';
+  (*file) << string << "_String_Type ";
+  //  Token_Rule2* token = stringAliases.find(string)->second;
+  //  (*file) << token->getId() << "_Type" << ' ';
 }
 void Symbol_Rule_List::outputType(ofstream* file)
 {

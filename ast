@@ -12,6 +12,12 @@ while [[ $# > 0 && $1 == * ]]; do
     case "$1" in
 	-h|--help|-\?) cat ~/bin/astres/ast_help_file; exit 0;;
 	-v|--version) echo "ast 0.1"; exit 0;;
+	--clean) if ((inputfileset == 0)); then
+	    echo "ast: No file to clean specified";
+	    exit 1
+	    else
+	    outputfile=`echo $inputfile | sed s/.ast//`; rm $outputfile.tab.cpp $outputfile.tab.hpp $outputfile.tab.o $outputfile.y $outputfile.l $outputfile.yy.cpp $outputfile.cpp $outputfile.o $outputfile.yy.o; exit 0
+	fi ;;
 	-V|--verbose) verbose=1; echo "No verbosity to be had here"; shift;;
 	-B|--directory) if (($# > 1)); then
 	    includedirectory=$2; shift 2
@@ -40,12 +46,13 @@ else
     fi
     astbin $inputfile $includedirectory $outputfile
     if ((all == 1)); then
-	bison -d -o $outputfile.tab.cpp $outputfile.y
+	bison -d --report-file=$outputfile.bisonreport -v -o $outputfile.tab.cpp $outputfile.y
 	flex -o$outputfile.yy.cpp $outputfile.l
 	g++ -c -std=c++0x $outputfile.cpp -o $outputfile.o
 	g++ -c -std=c++0x $outputfile.tab.cpp
 	g++ -c -std=c++0x $outputfile.yy.cpp
-	g++ -static $outputfile.o $outputfile.tab.o $outputfile.yy.o -o lib$outputfile.a
+	rm lib$outputfile.a
+	ar cq lib$outputfile.a $outputfile.o $outputfile.tab.o $outputfile.yy.o
 	if ((keep == 0)); then
 	    rm $outputfile.tab.cpp $outputfile.tab.hpp $outputfile.tab.o $outputfile.y $outputfile.l $outputfile.yy.cpp $outputfile.cpp $outputfile.o $outputfile.yy.o
 	fi

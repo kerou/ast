@@ -2,6 +2,7 @@
 #include "SymbolTable.hpp"
 #include <cstring>
 extern std::unordered_map<std::string,LexMode_Rule*> lexModeTable;
+extern std::unordered_map<std::string,Symbol_Rule_STRING*> stringTokens;
 ParserOutput g_ParserOutput;
 Symbols_Rule::Symbols_Rule(void)
 {
@@ -42,6 +43,7 @@ void BisonRules_Rule::addRule(BisonRule_Rule* rule)
 Symbol_Rule_STRING::Symbol_Rule_STRING(char* _string)
 {
   string = _string;
+  stringTokens[string] = this;
 }
 
 /// SemanticActions

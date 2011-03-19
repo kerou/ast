@@ -29,6 +29,7 @@ private:
 class Symbol_Rule
 {
 public:
+  Symbol_Rule(){}
   virtual void outputRule(std::ofstream* file)=0;
   virtual void outputType(std::ofstream* file)=0;
 };

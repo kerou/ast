@@ -4,6 +4,7 @@
 using namespace std;
 extern std::unordered_map<std::string,void*> characterLiterals;
 extern std::unordered_map<std::string,Token_Rule*> terminalTokens;
+extern std::unordered_map<std::string,Symbol_Rule_STRING*> stringTokens;
 extern std::unordered_map<std::string,Symbol_Rule_List*> listRules;
 void outputListCode(ofstream* file)
 {
@@ -30,15 +31,28 @@ void ParserOutput::outputCpp()
   outputFile(&file,fullFilename.c_str());
   rules->outputTypeDefinitions(&file);
   outputListCode(&file);
-  auto iter = terminalTokens.begin();
-  while (iter != terminalTokens.end())
-    {
-      file << iter->first << "_Type::" << iter->first << "_Type(char* _matchedText, char* _preceedingWhitespace)" << endl;
-      file << ":TerminalTokenBaseClass(_matchedText,_preceedingWhitespace)" << endl;
-      file << '{' << endl;
-      file << '}' << endl;
-      iter++;
-    }
+  {
+    auto iter = terminalTokens.begin();
+    while (iter != terminalTokens.end())
+      {
+	file << iter->first << "_Type::" << iter->first << "_Type(char* _matchedText, char* _preceedingWhitespace)" << endl;
+	file << ":TerminalTokenBaseClass(_matchedText,_preceedingWhitespace)" << endl;
+	file << '{' << endl;
+	file << '}' << endl;
+	iter++;
+      }
+  }
+  {
+    auto iter = stringTokens.begin();
+    while (iter != stringTokens.end())
+      {
+	file << iter->first << "_String_Type::" << iter->first << "_String_Type(char* _matchedText, char* _preceedingWhitespace)" << endl;
+	file << ":TerminalTokenBaseClass(_matchedText,_preceedingWhitespace)" << endl;
+	file << '{' << endl;
+	file << '}' << endl;
+	iter++;
+      }
+  }
 }
 void BisonRules_Rule::outputTypeDefinitions(ofstream* file)
 {
@@ -60,12 +74,12 @@ void DerivationRules_Rule::outputTypeDefinition(ofstream* file, char* typeName)
   if (rules.size() == 1)
     rules[0]->outputConstructorArguments(file);
   else
-    (*file) << "const unsigned short _numargs";
+    (*file) << "const unsigned short _numargs, const unsigned short _derivationType";
   (*file) << ')' << endl;
   if (rules.size() == 1)
     (*file) << ":NonTerminalBaseClass(" << rules[0]->size() << ')' << endl;
   else
-    (*file) << ":NonTerminalBaseClass(_numargs)" << endl;
+    (*file) << ":NonTerminalBaseClass(_numargs),derivationType(_derivationType)" << endl;
   (*file) << '{' << endl;
   if (rules.size() == 1)
     rules[0]->outputConstructorCode(file);
@@ -77,7 +91,7 @@ void DerivationRules_Rule::outputTypeDefinition(ofstream* file, char* typeName)
           (*file) << typeName << i+1 << "::" << typeName << i+1 << '(';
           rules[i]->outputConstructorArguments(file);
           (*file) << ')' << endl;
-          (*file) << ':' << typeName << '(' << rules[i]->size() << ')' << endl;
+          (*file) << ':' << typeName << '(' << rules[i]->size() << ',' << i+1 << ')' << endl;
           (*file) << '{' << endl;
           rules[i]->outputConstructorCode(file);
           (*file) << '}' << endl;

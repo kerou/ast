@@ -6,6 +6,7 @@ using namespace std;
 #include <iostream>
 std::unordered_map<std::string,unsigned int> LexCommand_Rule::rulesPerToken;
 extern std::unordered_map<std::string,void*> characterLiterals;
+extern std::unordered_map<std::string,Symbol_Rule_STRING*> stringTokens;
 
 void outputFile(ofstream* outfile, const char* infileName)
 {
@@ -28,10 +29,25 @@ void outputCharacterLiteralFlexRule(ofstream* file)
   auto iter = characterLiterals.begin();
   while (iter != characterLiterals.end())
     {
+      char literal = iter->first[0];
+      if (literal == ']' || literal == '\\' || literal == '^')
+	{
+	  (*file) << '\\';
+	}
       (*file) << iter->first[0];
       iter++;
     }
   (*file) << "] copyString(); count(yyleng); return yytext[0];" << endl;
+}
+void outputStringTokenFlexRules(ofstream* file)
+{
+  auto iter = stringTokens.begin();
+      cout << "yay" << endl;
+  while (iter != stringTokens.end())
+    {
+      (*file) << iter->first << " copyString(); count(yyleng); return " << iter->first << "_TOKEN;" << endl;
+      iter++;
+    }
 }
 void ParserOutput::outputFlex()
 {
@@ -50,10 +66,12 @@ void ParserOutput::outputFlex()
   LexCommand_Rule::clearMap();
 
   file << "%%" << endl;
+  
+  outputStringTokenFlexRules(&file);
 
   lexModes->outputFlexRules(&file);
 
-  outputCharacterLiteralFlexRule(&file);
+    outputCharacterLiteralFlexRule(&file);
 
   file << "[ \\t\\r] count(yyleng); whitespace();" << endl;
   file << "[\\n] endline(); whitespace();" << endl;

@@ -4,7 +4,7 @@
 #include <string>
 #include <cstring>
 int column = 1;
-int line  = 1;
+int line = 1;
 std::string stringBuffer;
 std::string whitespaceBuffer;
 std::vector<std::string> text;
@@ -69,22 +69,19 @@ void yyerror(const char* c)
 int yyparse();
 extern FILE* yyin;
 extern Script_Type* parserReturn;
-int main()
+Script_Type* parse(const char* filename)
 {
-	yyin = fopen("TestScript.txt","r");
+	yyin = fopen(filename,"r");
 	yyparse();
 	if (error)
 	{
-                std::cout << "Error" << std::endl;
-		for (unsigned int i = 0; i < text.size(); i++)
-		{
-			std::cout << text[i] << std::endl;
-		}
+	  return NULL;
 	}
 	else
 	{
 		std::cout << "Successfully parsed" << std::endl;
-		std::ofstream file("TestOutput.txt");
-		parserReturn->outputMatchedText(&std::cout);
+		std::ofstream file("Matchedfile.txt");
+		parserReturn->outputMatchedText(&file);
+		return parserReturn;
 	}
 }
