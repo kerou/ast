@@ -2,25 +2,29 @@ RuleTypeBaseClass::RuleTypeBaseClass()
 {
 
 }
+bool RuleTypeBaseClass::compatibleContainer(const RuleType _type)
+{
+  return type() == _type;
+}
 NonTerminalBaseClass::NonTerminalBaseClass(const unsigned short _numargs)
-:numargs(_numargs)
+ :numargs(_numargs)
 {
 }
 void NonTerminalBaseClass::outputMatchedText(std::ostream* stream)
 {
-	for (unsigned short i = 0; i < numargs; i++)
-	{
-		args[i]->outputMatchedText(stream);
-	}
+  for (unsigned short i = 0; i < numargs; i++)
+    {
+      args[i]->outputMatchedText(stream);
+    }
 }
 TerminalTokenBaseClass::TerminalTokenBaseClass(char* _matchedText, char* _preceedingWhitespace)
 {
-    matchedText = _matchedText;
-    preceedingWhitespace = _preceedingWhitespace;
+  matchedText = _matchedText;
+  preceedingWhitespace = _preceedingWhitespace;
 }
 void TerminalTokenBaseClass::outputMatchedText(std::ostream* stream)
 {
-	(*stream) << preceedingWhitespace << matchedText;
+  (*stream) << preceedingWhitespace << matchedText;
 }
 ListRuleBaseClass::ListRuleBaseClass()
 {
@@ -30,10 +34,22 @@ void ListRuleBaseClass::outputMatchedText(std::ostream* stream)
 }
 CharacterLiteral_Type::CharacterLiteral_Type(char _character, char* _preceedingWhitespace)
 {
-	character = _character;
-	preceedingWhitespace = _preceedingWhitespace;
+  character = _character;
+  preceedingWhitespace = _preceedingWhitespace;
 }
 void CharacterLiteral_Type::outputMatchedText(std::ostream* stream)
 {
-	(*stream) << '\'' << character << '\'';
+  (*stream) << '\'' << character << '\'';
+}
+#include <sstream>
+template <typename T>
+RuleIterator<T>::RuleIterator(RuleTypeBaseClass* _rule)
+{
+  if (!_rule->compatibleContainer(T::type()))
+    {
+      std::stringstream str;
+      str << "Error: Incompatible container " << T::type() << " for type " << _rule->type();
+      throw str;
+    }
+  rule = _rule;
 }

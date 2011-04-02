@@ -16,7 +16,7 @@ while [[ $# > 0 && $1 == * ]]; do
 	    echo "ast: No file to clean specified";
 	    exit 1
 	    else
-	    outputfile=`echo $inputfile | sed s/.ast//`; rm $outputfile.tab.cpp $outputfile.tab.hpp $outputfile.tab.o $outputfile.y $outputfile.l $outputfile.yy.cpp $outputfile.cpp $outputfile.o $outputfile.yy.o; exit 0
+	    outputfile=`echo $inputfile | sed s/.ast//`; rm $outputfile.tab.cpp $outputfile.tab.hpp $outputfile.tab.o $outputfile.y $outputfile.l $outputfile.yy.cpp $outputfile.cpp $outputfile.o $outputfile.yy.o $outputfile.bisonreport Matchedfile.txt -f; exit 0
 	fi ;;
 	-V|--verbose) verbose=1; echo "No verbosity to be had here"; shift;;
 	-B|--directory) if (($# > 1)); then

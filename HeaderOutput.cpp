@@ -26,6 +26,7 @@ void outputListTypes(ofstream* file)
       (*file) << '{' << endl;
       (*file) << "public:" << endl;
       (*file) << '\t' << iter->first << "_List();" << endl;
+      (*file) << "\tRuleType type(){return e" << iter->first << "_List;}" << endl;
       (*file) << "\tvoid add(" << iter->first << "_Type*);" << endl;
       (*file) << "\tunsigned int size(){return list.size();}" << endl;
       (*file) << '\t' << iter->first << "_Type* operator[](unsigned int index){return list[index];}" << endl;
@@ -39,23 +40,50 @@ void outputFile(ofstream* outfile, const char* infileName);
 void ParserOutput::outputHeader()
 {
   ofstream file(outputfile + ".h");
+  file << "#pragma once" << endl;
+    
+  file << "/// Enums" << endl;
+  file << "enum RuleType" << endl;
+  file << '{' << endl;
+  rules->outputEnumDeclarations(&file);
+  auto iter = terminalTokens.begin();
+  while (iter != terminalTokens.end())
+    {
+      file << "\te" << iter->first << ',' << endl;
+      iter++;
+    }
+  auto stringIter = stringTokens.begin();
+  while (stringIter != stringTokens.end())
+    {
+      file << "\te" << stringIter->first << "_String," << endl;
+      stringIter++;
+    }
+  auto listIter = listRules.begin();
+  while (listIter != listRules.end())
+  {
+    file << "\te" << listIter->first << "_List," << endl;
+    listIter++;
+  }
+  file << "\teCharacterLiteralsBegin," << endl;
+  file << "\teTypesMax = eCharacterLiteralsBegin + 256" << endl;
+  file << "};" << endl;
   {
     std::string fullFilename(resourceDirectory);
     fullFilename = fullFilename + "astres/HeaderPreamble.txt";
     outputFile(&file,fullFilename.c_str());
-  }
+  }  
   file << "/// Forward declarations of all types" << endl;
   rules->outputTypeDeclarations(&file);
   file << "/// List rule types" << endl;
   outputListTypeDeclarations(&file);
   file << "/// Terminal token aliases" << endl;
-  auto iter = terminalTokens.begin();
+  iter = terminalTokens.begin();
   while (iter != terminalTokens.end())
     {
       file << "class " << iter->first << "_Type;" << endl;
       iter++;
     }
-  auto stringIter = stringTokens.begin();
+  stringIter = stringTokens.begin();
   while (stringIter != stringTokens.end())
     {
       file << "class " << stringIter->first << "_String_Type;" << endl;
@@ -63,6 +91,7 @@ void ParserOutput::outputHeader()
     }
   file << "/// Character literal" << endl;
   file << "class CharacterLiteral_Type;" << endl;
+  
   /// Type definitions
   file << "/// Actual declarations" << endl;
   file << "/// User defined rules" << endl;
@@ -77,6 +106,7 @@ void ParserOutput::outputHeader()
       file << '{' << endl;
       file << "public:" << endl;
       file << '\t' << iter->first << "_Type(char* _matchedText, char* _preceedingWhitespace);" << endl;
+      file << "\tRuleType type(){return e" << iter->first << ";}" << endl;
       file << "};" << endl;
       iter++;
     }
@@ -87,9 +117,21 @@ void ParserOutput::outputHeader()
       file << '{' << endl;
       file << "public:" << endl;
       file << '\t' << stringIter->first << "_String_Type(char* _matchedText, char* _preceedingWhitespace);" << endl;
+      file << "\tRuleType type(){return e" << stringIter->first << "_String;}" << endl;
       file << "};" << endl;
       stringIter++;
     }
+}
+void BisonRules_Rule::outputEnumDeclarations(ofstream* file)
+{
+  for (unsigned int i = 0; i < rules.size(); i++)
+    {
+      rules[i]->outputEnumDeclaration(file);
+    }
+}
+void BisonRule_Rule::outputEnumDeclaration(ofstream* file)
+{
+  (*file) << "\te" << name << ',' << endl;
 }
 void BisonRules_Rule::outputTypeDeclarations(ofstream* file)
 {
@@ -118,12 +160,13 @@ void BisonRules_Rule::outputTypes(ofstream* file)
 }
 void BisonRule_Rule::outputType(ofstream* file)
 {
-  stringstream derivationName;
-  derivationName << name << "_Type";
-  rules->outputType(file,(char*)derivationName.str().c_str());
+  rules->outputType(file,name);
 }
-void DerivationRules_Rule::outputType(ofstream* file, char* typeName)
+void DerivationRules_Rule::outputType(ofstream* file, char* type)
 {
+  stringstream derivationName;
+  derivationName << type << "_Type";
+  const char* typeName = derivationName.str().c_str();
   (*file) << "class " << typeName << ": public NonTerminalBaseClass" << endl;
   (*file) << '{' << endl;
   (*file) << "public:" << endl;
@@ -138,6 +181,7 @@ void DerivationRules_Rule::outputType(ofstream* file, char* typeName)
     rules[0]->outputGetDeclarations(file);
   else
     (*file) << "\tunsigned short getType(){return derivationType;}" << endl;
+  (*file) << "\tRuleType type(){return e" << type << ";}" << endl;
   (*file) << "private:" << endl;
   if (rules.size() != 1)
     (*file) << "\tunsigned short derivationType;" << endl;

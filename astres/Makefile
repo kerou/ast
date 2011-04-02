@@ -1,0 +1,4 @@
+
+parent:
+	cd ..
+	make -k

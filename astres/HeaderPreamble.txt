@@ -1,48 +1,60 @@
-#pragma once
-#pragma pack(0)
 #include <ostream>
 /// Base class for all rules
 class RuleTypeBaseClass
 {
 public:
-	RuleTypeBaseClass();
-	virtual void outputMatchedText(std::ostream* stream)=0;
+  RuleTypeBaseClass();
+  virtual void outputMatchedText(std::ostream* stream)=0;
+  virtual RuleType type()=0;
+  virtual bool compatibleContainer(const RuleType _type);
 };
 class NonTerminalBaseClass: public RuleTypeBaseClass
 {
 public:
-	NonTerminalBaseClass(const unsigned short _numargs);
-	void outputMatchedText(std::ostream* stream);
+  NonTerminalBaseClass(const unsigned short _numargs);
+  void outputMatchedText(std::ostream* stream);
 protected:
-	RuleTypeBaseClass** args;
-	const unsigned short numargs;
+  RuleTypeBaseClass** args;
+  const unsigned short numargs;
 };
 class TerminalTokenBaseClass: public RuleTypeBaseClass
 {
 public:
-	TerminalTokenBaseClass(char* _matchedText, char* _preceedingWhitespace);
-	const char* getMatchedText(){return matchedText;}
-	void outputMatchedText(std::ostream* stream);
+  TerminalTokenBaseClass(char* _matchedText, char* _preceedingWhitespace);
+  const char* getMatchedText(){return matchedText;}
+  void outputMatchedText(std::ostream* stream);
 private:
-	char* matchedText;
-	char* preceedingWhitespace;
+  char* matchedText;
+  char* preceedingWhitespace;
 };
 #include <vector>
 class ListRuleBaseClass: public RuleTypeBaseClass
 {
 public:
-	ListRuleBaseClass();
-	void outputMatchedText(std::ostream* stream);
-	unsigned int size(){return list.size();}
+  ListRuleBaseClass();
+  void outputMatchedText(std::ostream* stream);
+  unsigned int size(){return list.size();}
 protected:
-	std::vector<RuleTypeBaseClass*> list;
+  std::vector<RuleTypeBaseClass*> list;
 };
 class CharacterLiteral_Type: public RuleTypeBaseClass
 {
 public:
-	CharacterLiteral_Type(char _character, char* _preceedingWhitespace);
-	void outputMatchedText(std::ostream* stream);
+  CharacterLiteral_Type(char _character, char* _preceedingWhitespace);
+  RuleType type(){return RuleType(eCharacterLiteralsBegin + (int)character);}
+  void outputMatchedText(std::ostream* stream);
 private:
-	char character;
-	char* preceedingWhitespace;
+  char character;
+  char* preceedingWhitespace;
+};
+/// Iterator
+template <typename T>
+class RuleIterator
+{
+public:
+  RuleIterator(RuleTypeBaseClass* _rule);
+  T& operator ->(){return *rule;}
+  void operator++();
+private:
+  RuleTypeBaseClass* rule;
 };

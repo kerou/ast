@@ -74,6 +74,7 @@ public:
   void outputRule(std::ofstream* file);
   void outputDeclaration(std::ofstream* file);
   void outputUnionMember(std::ofstream* file);
+  void outputEnumDeclaration(std::ofstream* file);
   void outputTypeDeclaration(std::ofstream* file);
   void outputTypeDefinition(std::ofstream* file);
   void outputType(std::ofstream* file);
@@ -89,6 +90,7 @@ public:
   void outputUnionMembers(std::ofstream* file);
   void outputDeclarations(std::ofstream* file);
   void outputRules(std::ofstream* file);
+  void outputEnumDeclarations(std::ofstream* file);
   void outputTypeDeclarations(std::ofstream* file);
   void outputTypeDefinitions(std::ofstream* file);
   void outputTypes(std::ofstream* file);
