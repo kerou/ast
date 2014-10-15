@@ -166,7 +166,7 @@ void DerivationRules_Rule::outputType(ofstream* file, char* type)
 {
   stringstream derivationName;
   derivationName << type << "_Type";
-  const char* typeName = derivationName.str().c_str();
+  std::string typeName = derivationName.str();
   (*file) << "class " << typeName << ": public NonTerminalBaseClass" << endl;
   (*file) << '{' << endl;
   (*file) << "public:" << endl;

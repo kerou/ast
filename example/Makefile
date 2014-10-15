@@ -10,14 +10,14 @@ CXX_DEPENDENCIES=-Wp,-MD,.deps/$(*F).P
 CXX_LINK=$(CXX) $(CFLAGS) $(LDFLAGS) -L.
 DISTDIR=$(top)ast-$(VERSION)
 
-all: astbin
-	@echo "Copying files to ~/bin"
-	@cp astbin ~/bin/astbin
-	@cp ast ~/bin/ast
-	@cp -r astres ~/bin/
+all: TestInput
+	@echo "Built TestInput from TestInput.ast"
+#	@cp astbin ~/bin/astbin
+#	@cp ast ~/bin/ast
+#	@cp -r astres ~/bin/
 
-install: astbin
-	@cp -r astres /usr/local/astres
+#install: astbin
+#	@cp -r astres /usr/local/astres
 
 DEPS_MAGIC := $(shell mkdir .deps > /dev/null 2>&1 || :)
 -include $(DEP_FILES)
@@ -32,13 +32,15 @@ DEPS_MAGIC := $(shell mkdir .deps > /dev/null 2>&1 || :)
 	@echo '$(CXX_COMPILE) -c $<'; \
 	$(CXX_COMPILE) $(CXX_DEPENDENCIES) -o $@ -c $<
 
-astbin: .obj $(OBJ)
+TestInput: .obj $(OBJ)
 	$(CXX_LINK) -o $@ $(OBJ) $(LDDEPS)
 
+%.y: %.ast
+	ast $*.ast
 .obj:
 	mkdir .obj
 tags: 
 
 
 clean:
-	rm -f -r .obj .deps *.tab.* *.lex.cpp astbin
+	rm -f -r .obj .deps *.tab.* *.lex.cpp TestInput TestInput.l TestInput.y TestInput.h TestInput.cpp TestInput.yy.cpp TestInput.bisonreport *.o

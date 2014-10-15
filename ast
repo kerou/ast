@@ -2,7 +2,7 @@
 verbose=0;
 all=0;
 keep=0;
-includedirectory="/usr/local/"
+includedirectory="./"
 inputfile="invalidfile"
 inputfileset=0;
 outputfile="libout.a"
@@ -44,7 +44,7 @@ else
     if ((outputfileset == 0)); then
 	outputfile=`echo $inputfile | sed s/.ast//`
     fi
-    astbin $inputfile $includedirectory $outputfile
+    ~/bin/astbin $inputfile $includedirectory $outputfile
     if ((all == 1)); then
 	bison -d --report-file=$outputfile.bisonreport -v -o $outputfile.tab.cpp $outputfile.y
 	flex -o$outputfile.yy.cpp $outputfile.l

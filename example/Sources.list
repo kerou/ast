@@ -1,0 +1,1 @@
+SOURCES= main.cpp TestInput.tab.cpp TestInput.lex.cpp TestInput.cpp

@@ -24,7 +24,21 @@ int main(int argv, char* argc[])
       std::cout << "ast: " << argc[1] << ": No such file" << std::endl;
       return -1;
     }
-  resourceDirectory = argc[2];
+  
+  // Get the last position of '/'
+  std::string aux(argc[0]);
+
+  // get '/' or '\\' depending on unix/mac or windows.
+#if defined(_WIN32) || defined(WIN32)
+  int pos = aux.rfind('\\');
+#else
+  int pos = aux.rfind('/');
+#endif
+
+  // Get the path and the name
+  resourceDirectory = aux.substr(0,pos+1);
+  //resourceDirectory = "~/
+  std::cout << "Resource dir: " << resourceDirectory << std::endl;
   outputfile = argc[3];
   yyparse();
   fclose(yyin);
