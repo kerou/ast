@@ -18,7 +18,7 @@ while [[ $# > 0 && $1 == * ]]; do
 	    else
 	    outputfile=`echo $inputfile | sed s/.ast//`; rm $outputfile.tab.cpp $outputfile.tab.hpp $outputfile.tab.o $outputfile.y $outputfile.l $outputfile.yy.cpp $outputfile.cpp $outputfile.o $outputfile.yy.o $outputfile.bisonreport Matchedfile.txt -f; exit 0
 	fi ;;
-	-V|--verbose) verbose=1; echo "No verbosity to be had here"; shift;;
+	-V|--verbose) verbose=1; shift;;
 	-B|--directory) if (($# > 1)); then
 	    includedirectory=$2; shift 2
 	    else
@@ -46,12 +46,16 @@ else
     fi
     ~/bin/astbin $inputfile $includedirectory $outputfile
     if ((all == 1)); then
-	bison -d --report-file=$outputfile.bisonreport -v -o $outputfile.tab.cpp $outputfile.y
+	if ((verbose == 1)); then
+	    bison -d --report-file=$outputfile.bisonreport -v -o $outputfile.tab.cpp $outputfile.y
+	else
+	    bison -d -o $outputfile.tab.cpp $outputfile.y
+	fi
 	flex -o$outputfile.yy.cpp $outputfile.l
 	g++ -c -std=c++0x $outputfile.cpp -o $outputfile.o
 	g++ -c -std=c++0x $outputfile.tab.cpp
 	g++ -c -std=c++0x $outputfile.yy.cpp
-	rm lib$outputfile.a
+	rm -f lib$outputfile.a
 	ar cq lib$outputfile.a $outputfile.o $outputfile.tab.o $outputfile.yy.o
 	if ((keep == 0)); then
 	    rm $outputfile.tab.cpp $outputfile.tab.hpp $outputfile.tab.o $outputfile.y $outputfile.l $outputfile.yy.cpp $outputfile.cpp $outputfile.o $outputfile.yy.o

@@ -2,7 +2,7 @@ Usage: ast [options] file
 Options:
   -h, --help		Display this information and exit
   -v, --version		Display version information and exit
-  -V, --verbose		Verbosity has no effect at this time
+  -V, --verbose		Prints a bison report and passes -v to bison
   -B, --directory <dir>	Changes the resource directory to <dir>
   -a, --compile-all	Compiles into a static library
   -k, --keep-int	Doesn't remove intermediary files with --compile-all

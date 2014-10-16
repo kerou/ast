@@ -121,6 +121,7 @@ void ParserOutput::outputHeader()
       file << "};" << endl;
       stringIter++;
     }
+  file << "Script_Type* parse(const char* filename, bool outputMatchedTokens = false);" << endl;
 }
 void BisonRules_Rule::outputEnumDeclarations(ofstream* file)
 {

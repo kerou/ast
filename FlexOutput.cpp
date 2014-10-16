@@ -82,6 +82,7 @@ void ParserOutput::outputFlex()
     fullFilename = fullFilename + "astres/FlexPostamble.txt";
     outputFile(&file,fullFilename.c_str());
   }
+  
 
 }
 /// Flex declarations

@@ -1,7 +1,12 @@
-include Sources.list
+SOURCES= main.cpp
+AST_SOURCES= TestInput.ast
+EXE_NAME= TestInput
 
-OBJ= $(patsubst %.cpp, .obj/%.o, $(SOURCES))
+OBJ= $(patsubst %.cpp, %.o, $(SOURCES))
 DEP_FILES= $(patsubst %.cpp, .deps/%.P, $(SOURCES))
+LIBS= $(patsubst %.ast, lib%.a, $(AST_SOURCES))
+LDDEPS= $(patsubst %.ast, -l%, $(AST_SOURCES))
+GENERATED_HEADERS= $(patsubst %.ast, %.h, $(AST_SOURCES))
 
 CPPFLAGS= -std=c++0x
 CXX= g++
@@ -10,37 +15,27 @@ CXX_DEPENDENCIES=-Wp,-MD,.deps/$(*F).P
 CXX_LINK=$(CXX) $(CFLAGS) $(LDFLAGS) -L.
 DISTDIR=$(top)ast-$(VERSION)
 
-all: TestInput
-	@echo "Built TestInput from TestInput.ast"
-#	@cp astbin ~/bin/astbin
-#	@cp ast ~/bin/ast
-#	@cp -r astres ~/bin/
-
-#install: astbin
-#	@cp -r astres /usr/local/astres
+all: $(EXE_NAME)
+	@echo "Builded"
 
 DEPS_MAGIC := $(shell mkdir .deps > /dev/null 2>&1 || :)
 -include $(DEP_FILES)
 
-%.tab.cpp: %.y
-	bison -d $*.y -o $*.tab.cpp
-
-%.lex.cpp: %.l
-	flex -o$*.lex.cpp $*.l
-
-.obj/%.o: %.cpp
+%.o: %.cpp
 	@echo '$(CXX_COMPILE) -c $<'; \
 	$(CXX_COMPILE) $(CXX_DEPENDENCIES) -o $@ -c $<
 
-TestInput: .obj $(OBJ)
+$(EXE_NAME): $(OBJ) $(LIBS)
 	$(CXX_LINK) -o $@ $(OBJ) $(LDDEPS)
 
-%.y: %.ast
-	ast $*.ast
+%.h lib%.a: %.ast
+	ast $*.ast -a
 .obj:
 	mkdir .obj
+.lib:
+	mkdir .lib
 tags: 
 
 
 clean:
-	rm -f -r .obj .deps *.tab.* *.lex.cpp TestInput TestInput.l TestInput.y TestInput.h TestInput.cpp TestInput.yy.cpp TestInput.bisonreport *.o
+	rm -f -r .obj .deps *.tab.* *.lex.cpp $(EXE_NAME) $(LIBS) $(GENERATED_HEADERS)

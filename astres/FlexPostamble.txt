@@ -69,7 +69,7 @@ void yyerror(const char* c)
 int yyparse();
 extern FILE* yyin;
 extern Script_Type* parserReturn;
-Script_Type* parse(const char* filename)
+Script_Type* parse(const char* filename, bool outputMatchedTokens)
 {
 	yyin = fopen(filename,"r");
 	yyparse();
@@ -80,8 +80,11 @@ Script_Type* parse(const char* filename)
 	else
 	{
 		std::cout << "Successfully parsed" << std::endl;
-		std::ofstream file("Matchedfile.txt");
-		parserReturn->outputMatchedText(&file);
+		if (outputMatchedTokens)
+		{
+			std::ofstream file("astMatchedTokens.txt");
+			parserReturn->outputMatchedText(&file);
+		}
 		return parserReturn;
 	}
 }
